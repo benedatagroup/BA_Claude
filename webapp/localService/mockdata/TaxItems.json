@@ -1,0 +1,119 @@
+[
+    {
+        "TaxItemId": "INV-001-19",
+        "InvoiceId": "INV-001",
+        "TaxCode": "V1",
+        "TaxRate": "19.00",
+        "TaxBase": "1200.00",
+        "TaxAmount": "228.00",
+        "Currency": "EUR"
+    },
+    {
+        "TaxItemId": "INV-002-19",
+        "InvoiceId": "INV-002",
+        "TaxCode": "V1",
+        "TaxRate": "19.00",
+        "TaxBase": "1000.00",
+        "TaxAmount": "190.00",
+        "Currency": "EUR"
+    },
+    {
+        "TaxItemId": "INV-003-19",
+        "InvoiceId": "INV-003",
+        "TaxCode": "V1",
+        "TaxRate": "19.00",
+        "TaxBase": "5120.00",
+        "TaxAmount": "972.80",
+        "Currency": "EUR"
+    },
+    {
+        "TaxItemId": "INV-004-19",
+        "InvoiceId": "INV-004",
+        "TaxCode": "V1",
+        "TaxRate": "19.00",
+        "TaxBase": "5800.00",
+        "TaxAmount": "1102.00",
+        "Currency": "EUR"
+    },
+    {
+        "TaxItemId": "INV-004-07",
+        "InvoiceId": "INV-004",
+        "TaxCode": "V2",
+        "TaxRate": "7.00",
+        "TaxBase": "480.00",
+        "TaxAmount": "33.60",
+        "Currency": "EUR"
+    },
+    {
+        "TaxItemId": "INV-005-19",
+        "InvoiceId": "INV-005",
+        "TaxCode": "V1",
+        "TaxRate": "19.00",
+        "TaxBase": "1125.00",
+        "TaxAmount": "213.75",
+        "Currency": "EUR"
+    },
+    {
+        "TaxItemId": "INV-006-19",
+        "InvoiceId": "INV-006",
+        "TaxCode": "V1",
+        "TaxRate": "19.00",
+        "TaxBase": "1770.00",
+        "TaxAmount": "336.30",
+        "Currency": "EUR"
+    },
+    {
+        "TaxItemId": "INV-007-19",
+        "InvoiceId": "INV-007",
+        "TaxCode": "V1",
+        "TaxRate": "19.00",
+        "TaxBase": "1638.00",
+        "TaxAmount": "311.22",
+        "Currency": "EUR"
+    },
+    {
+        "TaxItemId": "INV-008-00",
+        "InvoiceId": "INV-008",
+        "TaxCode": "V0",
+        "TaxRate": "0.00",
+        "TaxBase": "4550.00",
+        "TaxAmount": "0.00",
+        "Currency": "USD"
+    },
+    {
+        "TaxItemId": "INV-009-19",
+        "InvoiceId": "INV-009",
+        "TaxCode": "V1",
+        "TaxRate": "19.00",
+        "TaxBase": "3984.00",
+        "TaxAmount": "756.96",
+        "Currency": "EUR"
+    },
+    {
+        "TaxItemId": "INV-010-19",
+        "InvoiceId": "INV-010",
+        "TaxCode": "V1",
+        "TaxRate": "19.00",
+        "TaxBase": "12670.00",
+        "TaxAmount": "2407.30",
+        "Currency": "EUR"
+    },
+    {
+        "TaxItemId": "INV-011-19",
+        "InvoiceId": "INV-011",
+        "TaxCode": "V1",
+        "TaxRate": "19.00",
+        "TaxBase": "5550.00",
+        "TaxAmount": "1054.50",
+        "Currency": "EUR"
+    },
+    {
+        "TaxItemId": "INV-012-00",
+        "InvoiceId": "INV-012",
+        "TaxCode": "V0",
+        "TaxRate": "0.00",
+        "TaxBase": "8050.00",
+        "TaxAmount": "0.00",
+        "Currency": "EUR"
+    }
+]

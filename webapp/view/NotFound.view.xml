@@ -1,0 +1,27 @@
+<mvc:View
+    controllerName="baclaude.controller.NotFound"
+    displayBlock="true"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    height="100%">
+
+    <Page id="notFoundPage" showHeader="false" backgroundDesign="Standard">
+        <content>
+            <IllustratedMessage
+                id="notFoundIllustration"
+                illustrationType="sapIllus-PageNotFound"
+                title="{i18n>notFoundTitle}"
+                description="{i18n>notFoundDescription}"
+                enableVerticalResponsiveness="true">
+                <additionalContent>
+                    <Button id="notFoundBackButton"
+                        text="{i18n>actionBackToList}"
+                        icon="sap-icon://nav-back"
+                        type="Emphasized"
+                        press=".onNavBack"/>
+                </additionalContent>
+            </IllustratedMessage>
+        </content>
+    </Page>
+
+</mvc:View>

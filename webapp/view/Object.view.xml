@@ -1,0 +1,51 @@
+<mvc:View
+    controllerName="baclaude.controller.Object"
+    displayBlock="true"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:mvc="sap.ui.core.mvc"
+    height="100%">
+
+    <f:DynamicPage id="objectPage" toggleHeaderOnTitleClick="true" showFooter="false" fitContent="true">
+
+        <f:title>
+            <f:DynamicPageTitle id="objectPageTitle">
+                <f:heading>
+                    <Title id="objectPageHeading" text="{i18n>objectTitle}" level="H2"/>
+                </f:heading>
+                <f:expandedContent>
+                    <Text id="objectExpandedSubtitle" text="{i18n>objectSubtitle}"/>
+                </f:expandedContent>
+                <f:snappedContent>
+                    <Text id="objectSnappedSubtitle" text="{i18n>objectSubtitle}"/>
+                </f:snappedContent>
+                <f:navigationActions>
+                    <Button id="objectNavBack"
+                        icon="sap-icon://nav-back"
+                        tooltip="{i18n>actionBack}"
+                        type="Transparent"
+                        press=".onNavBack"/>
+                </f:navigationActions>
+            </f:DynamicPageTitle>
+        </f:title>
+
+        <f:content>
+            <IllustratedMessage
+                id="objectPlaceholder"
+                illustrationType="sapIllus-PageNotFound"
+                title="{i18n>objectPlaceholderTitle}"
+                description="{= ${i18n>objectPlaceholderDescription} + ' (' + ${view>/invoiceId} + ')' }"
+                enableVerticalResponsiveness="true">
+                <additionalContent>
+                    <Button id="objectPlaceholderBackButton"
+                        text="{i18n>actionBackToList}"
+                        icon="sap-icon://nav-back"
+                        type="Emphasized"
+                        press=".onNavBack"/>
+                </additionalContent>
+            </IllustratedMessage>
+        </f:content>
+
+    </f:DynamicPage>
+
+</mvc:View>

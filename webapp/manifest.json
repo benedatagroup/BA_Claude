@@ -1,0 +1,140 @@
+{
+  "_version": "1.84.0",
+  "sap.app": {
+    "id": "baclaude",
+    "type": "application",
+    "i18n": {
+      "bundleName": "baclaude.i18n.i18n",
+      "supportedLocales": [""],
+      "fallbackLocale": ""
+    },
+    "applicationVersion": {
+      "version": "0.0.1"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "sourceTemplate": {
+      "id": "@sap/generator-fiori:basic",
+      "version": "1.23.0",
+      "toolsId": "34409b04-b58b-404d-8758-67cdf1bb45c2"
+    },
+    "dataSources": {
+      "mainService": {
+        "uri": "/sap/opu/odata/sap/INVOICE_SRV/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "2.0",
+          "localUri": "localService/metadata.xml"
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "sap-icon://sales-document",
+      "favIcon": "",
+      "phone": "",
+      "phone@2": "",
+      "tablet": "",
+      "tablet@2": ""
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.147.2",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.f": {},
+        "sap.ui.layout": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "baclaude.i18n.i18n",
+          "supportedLocales": [""],
+          "fallbackLocale": ""
+        }
+      },
+      "": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "defaultBindingMode": "TwoWay",
+          "defaultCountMode": "Inline",
+          "useBatch": false,
+          "refreshAfterChange": false
+        }
+      }
+    },
+    "resources": {
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
+    },
+    "routing": {
+      "config": {
+        "routerClass": "sap.m.routing.Router",
+        "controlAggregation": "pages",
+        "controlId": "app",
+        "transition": "slide",
+        "type": "View",
+        "viewType": "XML",
+        "path": "baclaude.view",
+        "async": true,
+        "viewPath": "baclaude.view"
+      },
+      "routes": [
+        {
+          "name": "worklist",
+          "pattern": ":?query:",
+          "target": ["worklist"]
+        },
+        {
+          "name": "object",
+          "pattern": "Invoices/{invoiceId}:?query:",
+          "target": ["object"]
+        }
+      ],
+      "targets": {
+        "worklist": {
+          "id": "worklist",
+          "name": "Worklist",
+          "viewLevel": 1
+        },
+        "object": {
+          "id": "object",
+          "name": "Object",
+          "viewLevel": 2
+        },
+        "notFound": {
+          "id": "notFound",
+          "name": "NotFound",
+          "viewLevel": 3
+        }
+      }
+    },
+    "rootView": {
+      "viewName": "baclaude.view.App",
+      "type": "XML",
+      "id": "App",
+      "async": true
+    }
+  }
+}

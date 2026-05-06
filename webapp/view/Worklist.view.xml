@@ -1,0 +1,230 @@
+<mvc:View
+    controllerName="baclaude.controller.Worklist"
+    displayBlock="true"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:l="sap.ui.layout"
+    xmlns:core="sap.ui.core"
+    xmlns:mvc="sap.ui.core.mvc"
+    height="100%">
+
+    <f:DynamicPage id="page" toggleHeaderOnTitleClick="true" showFooter="false" preserveHeaderStateOnScroll="false" fitContent="true">
+
+        <!-- ============================================================ -->
+        <!-- Title area                                                   -->
+        <!-- ============================================================ -->
+        <f:title>
+            <f:DynamicPageTitle id="pageTitle">
+                <f:heading>
+                    <Title id="pageHeadingTitle" text="{i18n>worklistTitle}" level="H2"/>
+                </f:heading>
+                <f:expandedHeading>
+                    <Title id="pageExpandedHeadingTitle" text="{i18n>worklistTitle}" level="H2"/>
+                </f:expandedHeading>
+                <f:snappedHeading>
+                    <HBox id="snappedHeadingBox" alignItems="Center" wrap="Wrap">
+                        <Title id="snappedHeadingTitle" text="{i18n>worklistTitle}" level="H2"/>
+                        <ObjectNumber
+                            id="snappedHeadingCount"
+                            class="sapUiTinyMarginBegin"
+                            number="{view>/itemCount}"
+                            unit="{i18n>worklistResultsLabel}"
+                            emphasized="false"/>
+                    </HBox>
+                </f:snappedHeading>
+                <f:expandedContent>
+                    <Text id="expandedSubtitle" text="{i18n>worklistSubtitle}"/>
+                </f:expandedContent>
+                <f:snappedContent>
+                    <Text id="snappedSubtitle" text="{i18n>worklistSubtitle}"/>
+                </f:snappedContent>
+                <f:actions>
+                    <Button
+                        id="actionRefreshButton"
+                        text="{i18n>actionRefresh}"
+                        icon="sap-icon://refresh"
+                        type="Transparent"
+                        press=".onRefresh"/>
+                </f:actions>
+            </f:DynamicPageTitle>
+        </f:title>
+
+        <!-- ============================================================ -->
+        <!-- Filter header                                                -->
+        <!-- ============================================================ -->
+        <f:header>
+            <f:DynamicPageHeader id="pageHeader" pinnable="true">
+                <l:Grid id="filterGrid" defaultSpan="XL3 L4 M6 S12" hSpacing="1" vSpacing="1" containerQuery="true">
+
+                    <VBox id="filterStatusBox">
+                        <Label id="filterStatusLabel" text="{i18n>filterStatus}" labelFor="statusFilter"/>
+                        <SegmentedButton
+                            id="statusFilter"
+                            selectedKey="all"
+                            selectionChange=".onFilterChange"
+                            width="100%">
+                            <items>
+                                <SegmentedButtonItem id="statusFilterAll" key="all" text="{i18n>statusFilterAll}" icon="sap-icon://list"/>
+                                <SegmentedButtonItem id="statusFilterDraft" key="Draft" text="{i18n>statusDraft}" icon="sap-icon://edit"/>
+                                <SegmentedButtonItem id="statusFilterPosted" key="Posted" text="{i18n>statusPosted}" icon="sap-icon://accept"/>
+                            </items>
+                        </SegmentedButton>
+                    </VBox>
+
+                    <VBox id="filterVendorBox">
+                        <Label id="filterVendorLabel" text="{i18n>filterVendor}" labelFor="vendorFilter"/>
+                        <Input
+                            id="vendorFilter"
+                            placeholder="{i18n>filterVendorPlaceholder}"
+                            value=""
+                            liveChange=".onFilterChange"/>
+                    </VBox>
+
+                    <VBox id="filterDateBox">
+                        <Label id="filterDateLabel" text="{i18n>filterInvoiceDate}" labelFor="dateFilter"/>
+                        <DateRangeSelection
+                            id="dateFilter"
+                            placeholder="{i18n>filterDateRangePlaceholder}"
+                            displayFormat="medium"
+                            change=".onFilterChange"/>
+                    </VBox>
+
+                    <VBox id="filterCurrencyBox">
+                        <Label id="filterCurrencyLabel" text="{i18n>filterCurrency}" labelFor="currencyFilter"/>
+                        <Select
+                            id="currencyFilter"
+                            selectedKey=""
+                            forceSelection="false"
+                            change=".onFilterChange"
+                            width="100%">
+                            <core:Item id="currencyItemAll" key="" text="{i18n>filterCurrencyAll}"/>
+                            <core:Item id="currencyItemEUR" key="EUR" text="EUR"/>
+                            <core:Item id="currencyItemUSD" key="USD" text="USD"/>
+                        </Select>
+                    </VBox>
+
+                    <VBox id="filterAmountFromBox">
+                        <Label id="filterAmountFromLabel" text="{i18n>filterAmountFrom}" labelFor="amountFrom"/>
+                        <Input
+                            id="amountFrom"
+                            type="Number"
+                            placeholder="0,00"
+                            liveChange=".onFilterChange"/>
+                    </VBox>
+
+                    <VBox id="filterAmountToBox">
+                        <Label id="filterAmountToLabel" text="{i18n>filterAmountTo}" labelFor="amountTo"/>
+                        <Input
+                            id="amountTo"
+                            type="Number"
+                            placeholder="∞"
+                            liveChange=".onFilterChange"/>
+                    </VBox>
+
+                    <VBox id="filterClearBox">
+                        <Label id="filterClearLabel" text="&#xA0;"/>
+                        <Button
+                            id="clearFiltersButton"
+                            text="{i18n>actionClearFilters}"
+                            icon="sap-icon://clear-filter"
+                            press=".onClearFilters"
+                            width="100%"/>
+                    </VBox>
+
+                </l:Grid>
+            </f:DynamicPageHeader>
+        </f:header>
+
+        <!-- ============================================================ -->
+        <!-- Content – Invoice table                                      -->
+        <!-- ============================================================ -->
+        <f:content>
+            <Table
+                id="invoicesTable"
+                inset="false"
+                growing="true"
+                growingThreshold="20"
+                growingScrollToLoad="true"
+                mode="None"
+                sticky="ColumnHeaders,HeaderToolbar"
+                busyIndicatorDelay="{view>/tableBusyDelay}"
+                noDataText="{i18n>tableNoData}"
+                updateFinished=".onUpdateFinished"
+                items="{
+                    path: '/Invoices',
+                    parameters: {
+                        countMode: 'Inline'
+                    },
+                    sorter: {
+                        path: 'InvoiceDate',
+                        descending: true
+                    }
+                }">
+
+                <headerToolbar>
+                    <OverflowToolbar id="tableToolbar">
+                        <Title id="tableHeaderTitle" text="{view>/tableTitle}" level="H3"/>
+                        <ToolbarSpacer id="tableToolbarSpacer"/>
+                        <SearchField
+                            id="searchField"
+                            width="20rem"
+                            placeholder="{i18n>searchPlaceholder}"
+                            search=".onSearch"
+                            liveChange=".onSearch"/>
+                        <ToolbarSeparator id="tableToolbarSeparator"/>
+                        <Button
+                            id="sortButton"
+                            icon="sap-icon://sort"
+                            tooltip="{i18n>actionSort}"
+                            press=".onSort"/>
+                    </OverflowToolbar>
+                </headerToolbar>
+
+                <columns>
+                    <Column id="colInvoiceNumber" width="14rem">
+                        <Text id="colInvoiceNumberText" text="{i18n>colInvoiceNumber}"/>
+                    </Column>
+                    <Column id="colVendor" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+                        <Text id="colVendorText" text="{i18n>colVendor}"/>
+                    </Column>
+                    <Column id="colInvoiceDate" hAlign="End" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline" width="9rem">
+                        <Text id="colInvoiceDateText" text="{i18n>colInvoiceDate}"/>
+                    </Column>
+                    <Column id="colGrossAmount" hAlign="End" width="12rem">
+                        <Text id="colGrossAmountText" text="{i18n>colGrossAmount}"/>
+                    </Column>
+                    <Column id="colStatus" hAlign="End" width="9rem">
+                        <Text id="colStatusText" text="{i18n>colStatus}"/>
+                    </Column>
+                </columns>
+
+                <items>
+                    <ColumnListItem id="invoiceItem" type="Navigation" press=".onItemPress">
+                        <cells>
+                            <ObjectIdentifier
+                                id="cellInvoiceIdentifier"
+                                title="{InvoiceNumber}"
+                                text="{ReferenceNumber}"/>
+                            <Text id="cellVendor" text="{VendorName}"/>
+                            <Text id="cellInvoiceDate" text="{ path: 'InvoiceDate', formatter: '.formatter.formatDate' }"/>
+                            <ObjectNumber
+                                id="cellGrossAmount"
+                                number="{ parts: [{path: 'GrossAmount'}, {path: 'Currency'}], formatter: '.formatter.formatAmount' }"
+                                unit="{Currency}"
+                                emphasized="false"/>
+                            <ObjectStatus
+                                id="cellStatus"
+                                text="{ path: 'Status', formatter: '.formatter.statusText' }"
+                                state="{ path: 'Status', formatter: '.formatter.statusState' }"
+                                icon="{ path: 'Status', formatter: '.formatter.statusIcon' }"
+                                inverted="true"/>
+                        </cells>
+                    </ColumnListItem>
+                </items>
+
+            </Table>
+        </f:content>
+
+    </f:DynamicPage>
+
+</mvc:View>

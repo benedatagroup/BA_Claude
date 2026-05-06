@@ -1,0 +1,26 @@
+[
+    {
+        "InvoiceId": "INV-001",
+        "NoteText": "Beratungsleistungen aus Rahmenvertrag 2025/RV-118 abgerechnet. Genehmigt durch Frau Lehmann.",
+        "CreatedBy": "B. Maurer",
+        "CreatedAt": "/Date(1768435200000)/"
+    },
+    {
+        "InvoiceId": "INV-004",
+        "NoteText": "Q1-Abrechnung gemäß Statement of Work. Nachweise zu Reisekosten als Anlage zur PDF-Rechnung erhalten.",
+        "CreatedBy": "B. Maurer",
+        "CreatedAt": "/Date(1772323200000)/"
+    },
+    {
+        "InvoiceId": "INV-007",
+        "NoteText": "Auftrag wurde aufgrund Materialverfügbarkeit eine Woche später ausgeführt. Kunde hat zugestimmt.",
+        "CreatedBy": "B. Maurer",
+        "CreatedAt": "/Date(1775001600000)/"
+    },
+    {
+        "InvoiceId": "INV-010",
+        "NoteText": "Frühjahrskampagne 2026: Budget freigegeben durch Marketingleitung. Bitte mit Kostenstelle MKT-1100 verbuchen.",
+        "CreatedBy": "B. Maurer",
+        "CreatedAt": "/Date(1776643200000)/"
+    }
+]
