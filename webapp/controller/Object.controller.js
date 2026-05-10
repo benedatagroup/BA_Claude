@@ -1,11 +1,14 @@
 sap.ui.define([
     "./BaseController",
+    "../model/formatter",
     "sap/ui/model/json/JSONModel",
     "sap/ui/core/routing/History"
-], (BaseController, JSONModel, History) => {
+], (BaseController, formatter, JSONModel, History) => {
     "use strict";
 
     return BaseController.extend("baclaude.controller.Object", {
+
+        formatter: formatter,
 
         onInit() {
             const oViewModel = new JSONModel({

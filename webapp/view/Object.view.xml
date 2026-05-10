@@ -2,50 +2,244 @@
     controllerName="baclaude.controller.Object"
     displayBlock="true"
     xmlns="sap.m"
-    xmlns:f="sap.f"
     xmlns:mvc="sap.ui.core.mvc"
+    xmlns:uxap="sap.uxap"
+    xmlns:form="sap.ui.layout.form"
+    xmlns:core="sap.ui.core"
     height="100%">
 
-    <f:DynamicPage id="objectPage" toggleHeaderOnTitleClick="true" showFooter="false" fitContent="true">
+    <uxap:ObjectPageLayout
+        id="objectPageLayout"
+        showTitleInHeaderContent="true"
+        alwaysShowContentHeader="false"
+        preserveHeaderStateOnScroll="false"
+        headerContentPinnable="true"
+        toggleHeaderOnTitleClick="true"
+        upperCaseAnchorBar="false">
 
-        <f:title>
-            <f:DynamicPageTitle id="objectPageTitle">
-                <f:heading>
-                    <Title id="objectPageHeading" text="{i18n>objectTitle}" level="H2"/>
-                </f:heading>
-                <f:expandedContent>
-                    <Text id="objectExpandedSubtitle" text="{i18n>objectSubtitle}"/>
-                </f:expandedContent>
-                <f:snappedContent>
-                    <Text id="objectSnappedSubtitle" text="{i18n>objectSubtitle}"/>
-                </f:snappedContent>
-                <f:navigationActions>
+        <!-- ============================================================ -->
+        <!-- Header title: invoice number + vendor + back action          -->
+        <!-- ============================================================ -->
+        <uxap:headerTitle>
+            <uxap:ObjectPageDynamicHeaderTitle id="objectPageHeaderTitle">
+                <uxap:heading>
+                    <Title id="objectPageHeading"
+                        text="{InvoiceNumber}"
+                        level="H2"
+                        wrapping="true"/>
+                </uxap:heading>
+                <uxap:expandedHeading>
+                    <Title id="objectPageExpandedHeading"
+                        text="{InvoiceNumber}"
+                        level="H2"
+                        wrapping="true"/>
+                </uxap:expandedHeading>
+                <uxap:snappedHeading>
+                    <VBox id="objectPageSnappedHeadingBox">
+                        <Title id="objectPageSnappedHeading"
+                            text="{InvoiceNumber}"
+                            level="H2"
+                            wrapping="true"/>
+                        <Text id="objectPageSnappedSubHeading"
+                            text="{VendorName}"/>
+                    </VBox>
+                </uxap:snappedHeading>
+                <uxap:expandedContent>
+                    <Text id="objectPageExpandedSubtitle"
+                        text="{VendorName}"/>
+                </uxap:expandedContent>
+                <uxap:snappedTitleOnMobile>
+                    <Title id="objectPageSnappedMobileTitle"
+                        text="{InvoiceNumber}"
+                        level="H2"/>
+                </uxap:snappedTitleOnMobile>
+                <uxap:navigationActions>
                     <Button id="objectNavBack"
                         icon="sap-icon://nav-back"
                         tooltip="{i18n>actionBack}"
                         type="Transparent"
                         press=".onNavBack"/>
-                </f:navigationActions>
-            </f:DynamicPageTitle>
-        </f:title>
+                </uxap:navigationActions>
+            </uxap:ObjectPageDynamicHeaderTitle>
+        </uxap:headerTitle>
 
-        <f:content>
-            <IllustratedMessage
-                id="objectPlaceholder"
-                illustrationType="sapIllus-PageNotFound"
-                title="{i18n>objectPlaceholderTitle}"
-                description="{= ${i18n>objectPlaceholderDescription} + ' (' + ${view>/invoiceId} + ')' }"
-                enableVerticalResponsiveness="true">
-                <additionalContent>
-                    <Button id="objectPlaceholderBackButton"
-                        text="{i18n>actionBackToList}"
-                        icon="sap-icon://nav-back"
-                        type="Emphasized"
-                        press=".onNavBack"/>
-                </additionalContent>
-            </IllustratedMessage>
-        </f:content>
+        <!-- ============================================================ -->
+        <!-- Header content: status + key amounts                         -->
+        <!-- ============================================================ -->
+        <uxap:headerContent>
+            <HBox id="objectHeaderStatusBox" alignItems="Center" wrap="Wrap">
+                <VBox id="objectHeaderStatusInner" class="sapUiSmallMarginEnd">
+                    <Label id="objectHeaderStatusLabel" text="{i18n>colStatus}"/>
+                    <ObjectStatus
+                        id="objectHeaderStatus"
+                        text="{ path: 'Status', formatter: '.formatter.statusText' }"
+                        state="{ path: 'Status', formatter: '.formatter.statusState' }"
+                        icon="{ path: 'Status', formatter: '.formatter.statusIcon' }"
+                        inverted="true"/>
+                </VBox>
+            </HBox>
+            <VBox id="objectHeaderNetBox" class="sapUiSmallMarginEnd">
+                <Label id="objectHeaderNetLabel" text="{i18n>objectFieldNetAmount}"/>
+                <ObjectNumber
+                    id="objectHeaderNetAmount"
+                    number="{ parts: [{path: 'NetAmount'}, {path: 'Currency'}], formatter: '.formatter.formatAmount' }"
+                    unit="{Currency}"
+                    emphasized="false"/>
+            </VBox>
+            <VBox id="objectHeaderGrossBox">
+                <Label id="objectHeaderGrossLabel" text="{i18n>objectFieldGrossAmount}"/>
+                <ObjectNumber
+                    id="objectHeaderGrossAmount"
+                    number="{ parts: [{path: 'GrossAmount'}, {path: 'Currency'}], formatter: '.formatter.formatAmount' }"
+                    unit="{Currency}"
+                    emphasized="true"/>
+            </VBox>
+        </uxap:headerContent>
 
-    </f:DynamicPage>
+        <!-- ============================================================ -->
+        <!-- Sections                                                     -->
+        <!-- ============================================================ -->
+        <uxap:sections>
+
+            <!-- General / Overview -->
+            <uxap:ObjectPageSection id="sectionGeneral" title="{i18n>objectSectionGeneral}">
+                <uxap:subSections>
+                    <uxap:ObjectPageSubSection id="subSectionGeneral">
+                        <uxap:blocks>
+                            <form:SimpleForm id="formGeneral"
+                                editable="false"
+                                layout="ColumnLayout"
+                                columnsM="2"
+                                columnsL="2"
+                                columnsXL="2"
+                                labelSpanS="12"
+                                labelSpanM="4"
+                                labelSpanL="4"
+                                labelSpanXL="4"
+                                emptySpanS="0"
+                                emptySpanM="0"
+                                emptySpanL="0"
+                                emptySpanXL="0">
+                                <Label id="lblInvoiceNumber" text="{i18n>objectFieldInvoiceNumber}"/>
+                                <Text id="txtInvoiceNumber" text="{InvoiceNumber}"/>
+
+                                <Label id="lblReferenceNumber" text="{i18n>objectFieldReference}"/>
+                                <Text id="txtReferenceNumber" text="{ReferenceNumber}"/>
+
+                                <Label id="lblVendor" text="{i18n>objectFieldVendor}"/>
+                                <Text id="txtVendor" text="{VendorName}"/>
+
+                                <Label id="lblVendorId" text="{i18n>objectFieldVendorId}"/>
+                                <Text id="txtVendorId" text="{VendorId}"/>
+
+                                <Label id="lblCompanyCode" text="{i18n>objectFieldCompanyCode}"/>
+                                <Text id="txtCompanyCode" text="{CompanyCode}"/>
+
+                                <Label id="lblPaymentTerms" text="{i18n>objectFieldPaymentTerms}"/>
+                                <Text id="txtPaymentTerms" text="{PaymentTerms}"/>
+
+                                <Label id="lblCreatedBy" text="{i18n>objectFieldCreatedBy}"/>
+                                <Text id="txtCreatedBy" text="{CreatedBy}"/>
+                            </form:SimpleForm>
+                        </uxap:blocks>
+                    </uxap:ObjectPageSubSection>
+                </uxap:subSections>
+            </uxap:ObjectPageSection>
+
+            <!-- Dates -->
+            <uxap:ObjectPageSection id="sectionDates" title="{i18n>objectSectionDates}">
+                <uxap:subSections>
+                    <uxap:ObjectPageSubSection id="subSectionDates">
+                        <uxap:blocks>
+                            <form:SimpleForm id="formDates"
+                                editable="false"
+                                layout="ColumnLayout"
+                                columnsM="2"
+                                columnsL="2"
+                                columnsXL="2"
+                                labelSpanS="12"
+                                labelSpanM="4"
+                                labelSpanL="4"
+                                labelSpanXL="4"
+                                emptySpanS="0"
+                                emptySpanM="0"
+                                emptySpanL="0"
+                                emptySpanXL="0">
+                                <Label id="lblInvoiceDate" text="{i18n>objectFieldInvoiceDate}"/>
+                                <Text id="txtInvoiceDate"
+                                    text="{ path: 'InvoiceDate', formatter: '.formatter.formatDate' }"/>
+
+                                <Label id="lblDueDate" text="{i18n>objectFieldDueDate}"/>
+                                <Text id="txtDueDate"
+                                    text="{ path: 'DueDate', formatter: '.formatter.formatDate' }"/>
+
+                                <Label id="lblPostingDate" text="{i18n>objectFieldPostingDate}"/>
+                                <Text id="txtPostingDate"
+                                    text="{ path: 'PostingDate', formatter: '.formatter.formatDate' }"/>
+                            </form:SimpleForm>
+                        </uxap:blocks>
+                    </uxap:ObjectPageSubSection>
+                </uxap:subSections>
+            </uxap:ObjectPageSection>
+
+            <!-- Amounts -->
+            <uxap:ObjectPageSection id="sectionAmounts" title="{i18n>objectSectionAmounts}">
+                <uxap:subSections>
+                    <uxap:ObjectPageSubSection id="subSectionAmounts">
+                        <uxap:blocks>
+                            <form:SimpleForm id="formAmounts"
+                                editable="false"
+                                layout="ColumnLayout"
+                                columnsM="2"
+                                columnsL="2"
+                                columnsXL="2"
+                                labelSpanS="12"
+                                labelSpanM="4"
+                                labelSpanL="4"
+                                labelSpanXL="4"
+                                emptySpanS="0"
+                                emptySpanM="0"
+                                emptySpanL="0"
+                                emptySpanXL="0">
+                                <Label id="lblNetAmount" text="{i18n>objectFieldNetAmount}"/>
+                                <ObjectNumber
+                                    id="numNetAmount"
+                                    number="{ parts: [{path: 'NetAmount'}, {path: 'Currency'}], formatter: '.formatter.formatAmount' }"
+                                    unit="{Currency}"
+                                    emphasized="false"/>
+
+                                <Label id="lblTaxAmount" text="{i18n>objectFieldTaxAmount}"/>
+                                <ObjectNumber
+                                    id="numTaxAmount"
+                                    number="{ parts: [{path: 'TaxAmount'}, {path: 'Currency'}], formatter: '.formatter.formatAmount' }"
+                                    unit="{Currency}"
+                                    emphasized="false"/>
+
+                                <Label id="lblGrossAmount" text="{i18n>objectFieldGrossAmount}"/>
+                                <ObjectNumber
+                                    id="numGrossAmount"
+                                    number="{ parts: [{path: 'GrossAmount'}, {path: 'Currency'}], formatter: '.formatter.formatAmount' }"
+                                    unit="{Currency}"
+                                    emphasized="true"/>
+
+                                <Label id="lblCurrency" text="{i18n>objectFieldCurrency}"/>
+                                <Text id="txtCurrency" text="{Currency}"/>
+
+                                <Label id="lblStatus" text="{i18n>objectFieldStatus}"/>
+                                <ObjectStatus
+                                    id="statusFormStatus"
+                                    text="{ path: 'Status', formatter: '.formatter.statusText' }"
+                                    state="{ path: 'Status', formatter: '.formatter.statusState' }"
+                                    icon="{ path: 'Status', formatter: '.formatter.statusIcon' }"
+                                    inverted="true"/>
+                            </form:SimpleForm>
+                        </uxap:blocks>
+                    </uxap:ObjectPageSubSection>
+                </uxap:subSections>
+            </uxap:ObjectPageSection>
+
+        </uxap:sections>
+
+    </uxap:ObjectPageLayout>
 
 </mvc:View>
