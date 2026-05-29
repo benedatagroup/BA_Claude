@@ -15,7 +15,8 @@
         preserveHeaderStateOnScroll="false"
         headerContentPinnable="true"
         toggleHeaderOnTitleClick="true"
-        upperCaseAnchorBar="false">
+        upperCaseAnchorBar="false"
+        showFooter="{view>/editMode}">
 
         <!-- ============================================================ -->
         <!-- Header title: invoice number + vendor + back action          -->
@@ -60,6 +61,14 @@
                         type="Transparent"
                         press=".onNavBack"/>
                 </uxap:navigationActions>
+                <uxap:actions>
+                    <Button id="objectEditButton"
+                        text="{i18n>actionEdit}"
+                        icon="sap-icon://edit"
+                        type="Emphasized"
+                        press=".onEdit"
+                        visible="{= !${view>/editMode} }"/>
+                </uxap:actions>
             </uxap:ObjectPageDynamicHeaderTitle>
         </uxap:headerTitle>
 
@@ -127,7 +136,12 @@
                                 <Text id="txtReferenceNumber" text="{ReferenceNumber}"/>
 
                                 <Label id="lblVendor" text="{i18n>objectFieldVendor}"/>
-                                <Text id="txtVendor" text="{VendorName}"/>
+                                <Text id="txtVendor" text="{VendorName}"
+                                    visible="{= !${view>/editMode} }"/>
+                                <Input id="inpVendor"
+                                    value="{VendorName}"
+                                    maxLength="80"
+                                    visible="{view>/editMode}"/>
 
                                 <Label id="lblVendorId" text="{i18n>objectFieldVendorId}"/>
                                 <Text id="txtVendorId" text="{VendorId}"/>
@@ -171,7 +185,12 @@
 
                                 <Label id="lblDueDate" text="{i18n>objectFieldDueDate}"/>
                                 <Text id="txtDueDate"
-                                    text="{ path: 'DueDate', formatter: '.formatter.formatDate' }"/>
+                                    text="{ path: 'DueDate', formatter: '.formatter.formatDate' }"
+                                    visible="{= !${view>/editMode} }"/>
+                                <DatePicker id="dpDueDate"
+                                    dateValue="{DueDate}"
+                                    valueFormat="yyyy-MM-dd"
+                                    visible="{view>/editMode}"/>
 
                                 <Label id="lblPostingDate" text="{i18n>objectFieldPostingDate}"/>
                                 <Text id="txtPostingDate"
@@ -223,7 +242,12 @@
                                     emphasized="true"/>
 
                                 <Label id="lblCurrency" text="{i18n>objectFieldCurrency}"/>
-                                <Text id="txtCurrency" text="{Currency}"/>
+                                <Text id="txtCurrency" text="{Currency}"
+                                    visible="{= !${view>/editMode} }"/>
+                                <Input id="inpCurrency"
+                                    value="{Currency}"
+                                    maxLength="5"
+                                    visible="{view>/editMode}"/>
 
                                 <Label id="lblStatus" text="{i18n>objectFieldStatus}"/>
                                 <ObjectStatus
@@ -239,6 +263,22 @@
             </uxap:ObjectPageSection>
 
         </uxap:sections>
+
+        <!-- ============================================================ -->
+        <!-- Footer: save / cancel (only visible in edit mode)            -->
+        <!-- ============================================================ -->
+        <uxap:footer>
+            <OverflowToolbar id="objectFooterToolbar">
+                <ToolbarSpacer id="objectFooterSpacer"/>
+                <Button id="objectSaveButton"
+                    text="{i18n>actionSave}"
+                    type="Emphasized"
+                    press=".onSave"/>
+                <Button id="objectCancelButton"
+                    text="{i18n>actionCancel}"
+                    press=".onCancel"/>
+            </OverflowToolbar>
+        </uxap:footer>
 
     </uxap:ObjectPageLayout>
 
