@@ -262,6 +262,77 @@
                 </uxap:subSections>
             </uxap:ObjectPageSection>
 
+            <!-- Line items -->
+            <uxap:ObjectPageSection id="sectionItems" title="{i18n>objectSectionItems}">
+                <uxap:subSections>
+                    <uxap:ObjectPageSubSection id="subSectionItems">
+                        <uxap:blocks>
+                            <Table id="itemsTable"
+                                items="{Items}"
+                                growing="true"
+                                growingThreshold="50"
+                                noDataText="{i18n>itemsTableNoData}">
+                                <headerToolbar>
+                                    <OverflowToolbar id="itemsTableToolbar">
+                                        <Title id="itemsTableTitle" text="{i18n>objectSectionItems}"/>
+                                        <ToolbarSpacer id="itemsTableSpacer"/>
+                                        <Button id="itemsAddButton"
+                                            text="{i18n>actionAddItem}"
+                                            icon="sap-icon://add"
+                                            press=".onAddItem"
+                                            visible="{view>/editMode}"/>
+                                    </OverflowToolbar>
+                                </headerToolbar>
+                                <columns>
+                                    <Column id="colItemDescription">
+                                        <Text text="{i18n>colItemDescription}"/>
+                                    </Column>
+                                    <Column id="colItemQuantity" hAlign="End" minScreenWidth="Tablet" demandPopin="true">
+                                        <Text text="{i18n>colItemQuantity}"/>
+                                    </Column>
+                                    <Column id="colItemUnitPrice" hAlign="End" minScreenWidth="Tablet" demandPopin="true">
+                                        <Text text="{i18n>colItemUnitPrice}"/>
+                                    </Column>
+                                    <Column id="colItemTaxRate" hAlign="End" minScreenWidth="Tablet" demandPopin="true">
+                                        <Text text="{i18n>colItemTaxRate}"/>
+                                    </Column>
+                                    <Column id="colItemAmount" hAlign="End">
+                                        <Text text="{i18n>colItemAmount}"/>
+                                    </Column>
+                                </columns>
+                                <items>
+                                    <ColumnListItem>
+                                        <cells>
+                                            <Input value="{Description}"
+                                                editable="{view>/editMode}"
+                                                change=".onItemChange"/>
+                                            <Input value="{Quantity}"
+                                                type="Number"
+                                                textAlign="End"
+                                                editable="{view>/editMode}"
+                                                change=".onItemChange"/>
+                                            <Input value="{UnitPrice}"
+                                                type="Number"
+                                                textAlign="End"
+                                                editable="{view>/editMode}"
+                                                change=".onItemChange"/>
+                                            <Input value="{TaxRate}"
+                                                type="Number"
+                                                textAlign="End"
+                                                editable="{view>/editMode}"
+                                                change=".onItemChange"/>
+                                            <ObjectNumber
+                                                number="{ parts: [{path: 'NetAmount'}, {path: 'Currency'}], formatter: '.formatter.formatAmount' }"
+                                                unit="{Currency}"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </uxap:blocks>
+                    </uxap:ObjectPageSubSection>
+                </uxap:subSections>
+            </uxap:ObjectPageSection>
+
         </uxap:sections>
 
         <!-- ============================================================ -->

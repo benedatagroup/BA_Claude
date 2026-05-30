@@ -73,6 +73,9 @@ sap.ui.define([
                 return;
             }
 
+            // Item-first: make sure the invoice totals reflect the current line items before saving.
+            this._recalculateInvoiceTotals();
+
             // No actual changes – just leave edit mode without a request
             if (!oModel.hasPendingChanges()) {
                 this._leaveEditMode();
@@ -111,6 +114,139 @@ sap.ui.define([
             oModel.attachRequestCompleted(oReq.completed);
             oModel.attachRequestFailed(oReq.failed);
             oModel.submitChanges();
+        },
+
+        /* =========================================================== */
+        /* line items                                                  */
+        /* =========================================================== */
+
+        /**
+         * Adds a new, empty invoice item to the current invoice and shows it in the table
+         * right away. OData V2 does not surface a transient createEntry context in a
+         * navigation list binding, so the new position is persisted and the table binding is
+         * refreshed – the row appears without a page reload and can then be edited inline.
+         * Its amounts roll up into the invoice totals on save (item-first).
+         */
+        onAddItem() {
+            const oModel = this.getModel();
+            const oInvoiceContext = this.getView().getBindingContext();
+            if (!oInvoiceContext) {
+                return;
+            }
+
+            const oInvoice = oInvoiceContext.getObject();
+            oModel.createEntry("/InvoiceItems", {
+                properties: {
+                    ItemId: this._nextItemId(),
+                    InvoiceId: this.getModel("view").getProperty("/invoiceId"),
+                    Description: "",
+                    Quantity: "1.000",
+                    Unit: "EA",
+                    UnitPrice: "0.00",
+                    TaxRate: "19.00",
+                    TaxCode: "V1",
+                    NetAmount: "0.00",
+                    TaxAmount: "0.00",
+                    GrossAmount: "0.00",
+                    Currency: oInvoice.Currency || "EUR"
+                }
+            });
+
+            const oView = this.getView();
+            const oBundle = this.getResourceBundle();
+            const that = this;
+            oView.setBusy(true);
+
+            // Non-batch mode does not invoke the submitChanges callbacks, so the model-level
+            // request events are used to react to the create result (see onSave for details).
+            const oReq = {};
+            const fnCleanup = () => {
+                oModel.detachRequestCompleted(oReq.completed);
+                oModel.detachRequestFailed(oReq.failed);
+                oView.setBusy(false);
+            };
+            oReq.completed = (oEvent) => {
+                fnCleanup();
+                if (oEvent.getParameter("success")) {
+                    that.byId("itemsTable").getBinding("items").refresh();
+                } else {
+                    MessageBox.error(oBundle.getText("messageItemAddError"));
+                }
+            };
+            oReq.failed = () => {
+                fnCleanup();
+                MessageBox.error(oBundle.getText("messageItemAddError"));
+            };
+
+            oModel.attachRequestCompleted(oReq.completed);
+            oModel.attachRequestFailed(oReq.failed);
+            oModel.submitChanges();
+        },
+
+        /**
+         * Recalculates the amounts of a single item when one of its editable fields
+         * (quantity, unit price, tax rate) changes, then rolls the change up into the
+         * invoice totals so the header stays consistent (item-first calculation).
+         */
+        onItemChange(oEvent) {
+            const oContext = oEvent.getSource().getBindingContext();
+            if (!oContext) {
+                return;
+            }
+            this._recalculateItem(oContext);
+            this._recalculateInvoiceTotals();
+        },
+
+        /** Returns the item row of the current invoice that is currently loaded in the table. */
+        _getItemContexts() {
+            const oBinding = this.byId("itemsTable").getBinding("items");
+            return oBinding ? oBinding.getCurrentContexts() : [];
+        },
+
+        /** Derives the next free item id (existing maximum + 10) as a string. */
+        _nextItemId() {
+            let iMax = 0;
+            this._getItemContexts().forEach((oContext) => {
+                const iId = parseInt(oContext.getObject().ItemId, 10);
+                if (!isNaN(iId) && iId > iMax) {
+                    iMax = iId;
+                }
+            });
+            return String(iMax + 10);
+        },
+
+        /** Computes net, tax and gross amount of a single item from its quantity, price and tax rate. */
+        _recalculateItem(oContext) {
+            const oModel = this.getModel();
+            const oItem = oContext.getObject();
+            const fNet = (parseFloat(oItem.Quantity) || 0) * (parseFloat(oItem.UnitPrice) || 0);
+            const fTax = fNet * (parseFloat(oItem.TaxRate) || 0) / 100;
+            oModel.setProperty("NetAmount", fNet.toFixed(2), oContext);
+            oModel.setProperty("TaxAmount", fTax.toFixed(2), oContext);
+            oModel.setProperty("GrossAmount", (fNet + fTax).toFixed(2), oContext);
+        },
+
+        /** Aggregates all item amounts into the invoice's net, tax and gross totals. */
+        _recalculateInvoiceTotals() {
+            const oModel = this.getModel();
+            const oInvoiceContext = this.getView().getBindingContext();
+            if (!oInvoiceContext) {
+                return;
+            }
+
+            let fNet = 0;
+            let fTax = 0;
+            let fGross = 0;
+            this._getItemContexts().forEach((oContext) => {
+                const oItem = oContext.getObject();
+                fNet += parseFloat(oItem.NetAmount) || 0;
+                fTax += parseFloat(oItem.TaxAmount) || 0;
+                fGross += parseFloat(oItem.GrossAmount) || 0;
+            });
+
+            oModel.setProperty("NetAmount", fNet.toFixed(2), oInvoiceContext);
+            oModel.setProperty("TaxAmount", fTax.toFixed(2), oInvoiceContext);
+            oModel.setProperty("GrossAmount", fGross.toFixed(2), oInvoiceContext);
         },
 
         /* =========================================================== */
