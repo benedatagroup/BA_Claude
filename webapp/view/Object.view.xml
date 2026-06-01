@@ -271,6 +271,7 @@
                                 items="{Items}"
                                 growing="true"
                                 growingThreshold="50"
+                                updateFinished=".onItemsUpdateFinished"
                                 noDataText="{i18n>itemsTableNoData}">
                                 <headerToolbar>
                                     <OverflowToolbar id="itemsTableToolbar">
@@ -299,6 +300,10 @@
                                     <Column id="colItemAmount" hAlign="End">
                                         <Text text="{i18n>colItemAmount}"/>
                                     </Column>
+                                    <Column id="colItemActions" hAlign="End" width="3rem"
+                                        visible="{view>/editMode}">
+                                        <Text id="colItemActionsHeader" text=""/>
+                                    </Column>
                                 </columns>
                                 <items>
                                     <ColumnListItem>
@@ -324,6 +329,57 @@
                                             <ObjectNumber
                                                 number="{ parts: [{path: 'NetAmount'}, {path: 'Currency'}], formatter: '.formatter.formatAmount' }"
                                                 unit="{Currency}"/>
+                                            <Button
+                                                id="itemDeleteButton"
+                                                icon="sap-icon://delete"
+                                                type="Transparent"
+                                                tooltip="{i18n>actionDeleteItem}"
+                                                press=".onDeleteItem"
+                                                visible="{view>/editMode}"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </uxap:blocks>
+                    </uxap:ObjectPageSubSection>
+                </uxap:subSections>
+            </uxap:ObjectPageSection>
+
+            <!-- Tax positions (aggregated from the line items by tax rate) -->
+            <uxap:ObjectPageSection id="sectionTaxItems" title="{i18n>objectSectionTaxItems}">
+                <uxap:subSections>
+                    <uxap:ObjectPageSubSection id="subSectionTaxItems">
+                        <uxap:blocks>
+                            <Table id="taxItemsTable"
+                                items="{view>/taxItems}"
+                                noDataText="{i18n>taxItemsTableNoData}">
+                                <headerToolbar>
+                                    <OverflowToolbar id="taxItemsTableToolbar">
+                                        <Title id="taxItemsTableTitle" text="{i18n>objectSectionTaxItems}"/>
+                                    </OverflowToolbar>
+                                </headerToolbar>
+                                <columns>
+                                    <Column id="colTaxRate" hAlign="End">
+                                        <Text id="colTaxRateHeader" text="{i18n>colTaxRate}"/>
+                                    </Column>
+                                    <Column id="colTaxBase" hAlign="End">
+                                        <Text id="colTaxBaseHeader" text="{i18n>colTaxBase}"/>
+                                    </Column>
+                                    <Column id="colTaxAmount" hAlign="End">
+                                        <Text id="colTaxAmountHeader" text="{i18n>colTaxAmount}"/>
+                                    </Column>
+                                </columns>
+                                <items>
+                                    <ColumnListItem id="taxItemsRow">
+                                        <cells>
+                                            <Text id="taxItemRate"
+                                                text="{ path: 'view>TaxRate', formatter: '.formatter.formatTaxRate' }"/>
+                                            <ObjectNumber id="taxItemBase"
+                                                number="{ parts: [{path: 'view>TaxBase'}, {path: 'view>Currency'}], formatter: '.formatter.formatAmount' }"
+                                                unit="{view>Currency}"/>
+                                            <ObjectNumber id="taxItemAmount"
+                                                number="{ parts: [{path: 'view>TaxAmount'}, {path: 'view>Currency'}], formatter: '.formatter.formatAmount' }"
+                                                unit="{view>Currency}"/>
                                         </cells>
                                     </ColumnListItem>
                                 </items>

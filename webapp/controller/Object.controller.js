@@ -19,7 +19,8 @@ sap.ui.define([
             const oViewModel = new JSONModel({
                 invoiceId: "",
                 editMode: false,
-                busy: false
+                busy: false,
+                taxItems: []
             });
             this.setModel(oViewModel, "view");
 
@@ -195,6 +196,60 @@ sap.ui.define([
             }
             this._recalculateItem(oContext);
             this._recalculateInvoiceTotals();
+            this._recalculateTaxItems();
+        },
+
+        /**
+         * Removes an invoice item. As with adding, OData V2 navigation list bindings do not
+         * surface transient deletions, so the entity is removed and the change submitted right
+         * away; the table binding is then refreshed so the row disappears without a page reload.
+         * Totals and tax positions are recalculated from the remaining items (item-first).
+         */
+        onDeleteItem(oEvent) {
+            const oContext = oEvent.getSource().getBindingContext();
+            if (!oContext) {
+                return;
+            }
+
+            const oModel = this.getModel();
+            const oView = this.getView();
+            const oBundle = this.getResourceBundle();
+            const that = this;
+            oView.setBusy(true);
+
+            // Non-batch mode does not invoke the submitChanges callbacks, so the model-level
+            // request events are used to react to the delete result (see onSave for details).
+            const oReq = {};
+            const fnCleanup = () => {
+                oModel.detachRequestCompleted(oReq.completed);
+                oModel.detachRequestFailed(oReq.failed);
+                oView.setBusy(false);
+            };
+            oReq.completed = (oEvt) => {
+                fnCleanup();
+                if (oEvt.getParameter("success")) {
+                    // updateFinished on the refreshed table triggers the tax recalculation.
+                    that.byId("itemsTable").getBinding("items").refresh();
+                } else {
+                    MessageBox.error(oBundle.getText("messageItemDeleteError"));
+                }
+            };
+            oReq.failed = () => {
+                fnCleanup();
+                MessageBox.error(oBundle.getText("messageItemDeleteError"));
+            };
+
+            oModel.attachRequestCompleted(oReq.completed);
+            oModel.attachRequestFailed(oReq.failed);
+            oModel.remove(oContext.getPath());
+        },
+
+        /**
+         * Recalculates the aggregated tax positions after the line item table has (re)loaded
+         * its rows, e.g. on initial display, growing or after an add/delete refresh.
+         */
+        onItemsUpdateFinished() {
+            this._recalculateTaxItems();
         },
 
         /** Returns the item row of the current invoice that is currently loaded in the table. */
@@ -247,6 +302,46 @@ sap.ui.define([
             oModel.setProperty("NetAmount", fNet.toFixed(2), oInvoiceContext);
             oModel.setProperty("TaxAmount", fTax.toFixed(2), oInvoiceContext);
             oModel.setProperty("GrossAmount", fGross.toFixed(2), oInvoiceContext);
+        },
+
+        /**
+         * Aggregates the invoice line items into tax positions, one row per tax rate. The tax
+         * base is the sum of the net amounts of all items sharing that rate, the tax amount is
+         * the tax base multiplied by the rate. The result is written to the view model so the
+         * tax positions table stays in sync whenever an item is added, changed or removed.
+         */
+        _recalculateTaxItems() {
+            const oInvoiceContext = this.getView().getBindingContext();
+            const sInvoiceCurrency = oInvoiceContext ? oInvoiceContext.getObject().Currency : "EUR";
+
+            const mGroups = {};
+            this._getItemContexts().forEach((oContext) => {
+                const oItem = oContext.getObject();
+                const fRate = parseFloat(oItem.TaxRate) || 0;
+                const sKey = fRate.toFixed(2);
+                if (!mGroups[sKey]) {
+                    mGroups[sKey] = {
+                        TaxRate: fRate,
+                        TaxBase: 0,
+                        Currency: oItem.Currency || sInvoiceCurrency
+                    };
+                }
+                mGroups[sKey].TaxBase += parseFloat(oItem.NetAmount) || 0;
+            });
+
+            const aTaxItems = Object.keys(mGroups)
+                .sort((sA, sB) => parseFloat(sB) - parseFloat(sA))
+                .map((sKey) => {
+                    const oGroup = mGroups[sKey];
+                    return {
+                        TaxRate: oGroup.TaxRate,
+                        TaxBase: oGroup.TaxBase.toFixed(2),
+                        TaxAmount: (oGroup.TaxBase * oGroup.TaxRate / 100).toFixed(2),
+                        Currency: oGroup.Currency
+                    };
+                });
+
+            this.getModel("view").setProperty("/taxItems", aTaxItems);
         },
 
         /* =========================================================== */

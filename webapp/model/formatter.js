@@ -71,6 +71,20 @@ sap.ui.define([
             }
             const oFormat = NumberFormat.getCurrencyInstance({ showMeasure: false });
             return oFormat.format(vAmount, sCurrency || "EUR");
+        },
+
+        /**
+         * Formats a numeric tax rate as a localized percentage, e.g. 19 -> "19,00 %".
+         */
+        formatTaxRate(vRate) {
+            if (vRate === null || vRate === undefined || vRate === "") {
+                return "";
+            }
+            const oFormat = NumberFormat.getPercentInstance({
+                minFractionDigits: 2,
+                maxFractionDigits: 2
+            });
+            return oFormat.format((parseFloat(vRate) || 0) / 100);
         }
     };
 });
