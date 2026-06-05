@@ -34,9 +34,14 @@ sap.ui.define([
             // Leaving any previous edit state behind when a new invoice is opened
             this._leaveEditMode();
 
-            // Bind the view to the invoice key so future detail content can read its properties
+            // Bind the view to the invoice key so future detail content can read its properties.
+            // The Note navigation is expanded so the note text is available for the Notes section
+            // (and so we can tell on save whether a note entity already exists).
             this.getView().bindElement({
                 path: "/" + this.getModel().createKey("Invoices", { InvoiceId: sInvoiceId }),
+                parameters: {
+                    expand: "Note"
+                },
                 events: {
                     dataRequested: () => this.getView().setBusy(true),
                     dataReceived: () => this.getView().setBusy(false)
@@ -77,6 +82,11 @@ sap.ui.define([
             // Item-first: make sure the invoice totals reflect the current line items before saving.
             this._recalculateInvoiceTotals();
 
+            // Notes: an existing note is updated automatically through the two-way binding on
+            // Note/NoteText; for an invoice that has no note yet a new note entity is created so
+            // the entered text is persisted through the navigation property.
+            this._ensureNoteEntity(oContext);
+
             // No actual changes – just leave edit mode without a request
             if (!oModel.hasPendingChanges()) {
                 this._leaveEditMode();
@@ -102,6 +112,12 @@ sap.ui.define([
                 fnCleanup();
                 if (oEvent.getParameter("success")) {
                     that._leaveEditMode();
+                    // Reload the invoice (incl. the expanded Note) so the displayed note text
+                    // reflects what was just persisted, also when a new note was created.
+                    const oElementBinding = that.getView().getElementBinding();
+                    if (oElementBinding) {
+                        oElementBinding.refresh(true);
+                    }
                     MessageToast.show(oBundle.getText("messageSaveSuccess"));
                 } else {
                     MessageBox.error(oBundle.getText("messageSaveError"));
@@ -342,6 +358,40 @@ sap.ui.define([
                 });
 
             this.getModel("view").setProperty("/taxItems", aTaxItems);
+        },
+
+        /* =========================================================== */
+        /* notes                                                       */
+        /* =========================================================== */
+
+        /**
+         * Makes sure the entered note text is persisted through the Note navigation property.
+         * If the invoice already has a note, the two-way binding on Note/NoteText has already
+         * registered the change and nothing needs to happen here. If the invoice has no note yet
+         * and the user entered some text, a new note entity is created and linked via the invoice
+         * id; submitChanges (called by onSave) then persists it together with the other changes.
+         */
+        _ensureNoteEntity(oInvoiceContext) {
+            const oModel = this.getModel();
+
+            // A note already exists – its text is tracked through the two-way binding.
+            if (oInvoiceContext.getObject("Note")) {
+                return;
+            }
+
+            const sText = this.byId("notesTextArea").getValue();
+            if (!sText) {
+                return;
+            }
+
+            oModel.createEntry("/Notes", {
+                properties: {
+                    InvoiceId: this.getModel("view").getProperty("/invoiceId"),
+                    NoteText: sText,
+                    CreatedBy: oInvoiceContext.getObject().CreatedBy || "",
+                    CreatedAt: new Date()
+                }
+            });
         },
 
         /* =========================================================== */

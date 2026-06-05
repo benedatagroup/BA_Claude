@@ -160,6 +160,25 @@
                 </uxap:subSections>
             </uxap:ObjectPageSection>
 
+            <!-- Notes -->
+            <uxap:ObjectPageSection id="sectionNotes" title="{i18n>objectSectionNotes}">
+                <uxap:subSections>
+                    <uxap:ObjectPageSubSection id="subSectionNotes">
+                        <uxap:blocks>
+                            <TextArea id="notesTextArea"
+                                value="{Note/NoteText}"
+                                editable="{view>/editMode}"
+                                width="100%"
+                                rows="5"
+                                growing="true"
+                                growingMaxLines="15"
+                                maxLength="2000"
+                                placeholder="{i18n>objectNotesPlaceholder}"/>
+                        </uxap:blocks>
+                    </uxap:ObjectPageSubSection>
+                </uxap:subSections>
+            </uxap:ObjectPageSection>
+
             <!-- Dates -->
             <uxap:ObjectPageSection id="sectionDates" title="{i18n>objectSectionDates}">
                 <uxap:subSections>
