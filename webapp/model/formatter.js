@@ -1,8 +1,9 @@
 sap.ui.define([
     "sap/ui/core/library",
     "sap/ui/core/format/DateFormat",
-    "sap/ui/core/format/NumberFormat"
-], (coreLibrary, DateFormat, NumberFormat) => {
+    "sap/ui/core/format/NumberFormat",
+    "sap/ui/core/format/FileSizeFormat"
+], (coreLibrary, DateFormat, NumberFormat, FileSizeFormat) => {
     "use strict";
 
     const ValueState = coreLibrary.ValueState;
@@ -85,6 +86,16 @@ sap.ui.define([
                 maxFractionDigits: 2
             });
             return oFormat.format((parseFloat(vRate) || 0) / 100);
+        },
+
+        /**
+         * Formats a file size given in bytes as a human readable string, e.g. 2048 -> "2 KB".
+         */
+        formatFileSize(vSize) {
+            if (vSize === null || vSize === undefined || vSize === "") {
+                return "";
+            }
+            return FileSizeFormat.getInstance({ maxFractionDigits: 1 }).format(vSize);
         }
     };
 });

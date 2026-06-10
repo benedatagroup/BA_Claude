@@ -6,6 +6,7 @@
     xmlns:uxap="sap.uxap"
     xmlns:form="sap.ui.layout.form"
     xmlns:core="sap.ui.core"
+    xmlns:upload="sap.m.upload"
     height="100%">
 
     <uxap:ObjectPageLayout
@@ -403,6 +404,53 @@
                                     </ColumnListItem>
                                 </items>
                             </Table>
+                        </uxap:blocks>
+                    </uxap:ObjectPageSubSection>
+                </uxap:subSections>
+            </uxap:ObjectPageSection>
+
+            <!-- Attachments -->
+            <uxap:ObjectPageSection id="sectionAttachments" title="{i18n>objectSectionAttachments}">
+                <uxap:subSections>
+                    <uxap:ObjectPageSubSection id="subSectionAttachments">
+                        <uxap:blocks>
+                            <!--
+                                The attachments are read from the Invoice's Attachments navigation
+                                property. The UploadSet doubles as the list (file name + type/size)
+                                and, in edit mode, as the upload control. Uploading is only enabled
+                                while editing (uploadEnabled bound to the view edit flag).
+                            -->
+                            <upload:UploadSet
+                                id="attachmentsUploadSet"
+                                items="{Attachments}"
+                                uploadEnabled="{view>/editMode}"
+                                instantUpload="false"
+                                showIcons="true"
+                                terminationEnabled="false"
+                                afterItemAdded=".onAttachmentAdded"
+                                beforeItemRemoved=".onAttachmentRemove"
+                                noDataText="{i18n>attachmentsNoData}">
+                                <upload:items>
+                                    <upload:UploadSetItem
+                                        fileName="{FileName}"
+                                        mediaType="{MimeType}"
+                                        visibleEdit="false"
+                                        visibleRemove="{view>/editMode}"
+                                        enabledRemove="{view>/editMode}">
+                                        <upload:attributes>
+                                            <ObjectAttribute
+                                                title="{i18n>colFileType}"
+                                                text="{FileType}"/>
+                                            <ObjectAttribute
+                                                title="{i18n>colFileSize}"
+                                                text="{ path: 'FileSize', formatter: '.formatter.formatFileSize' }"/>
+                                            <ObjectAttribute
+                                                title="{i18n>colUploadedAt}"
+                                                text="{ path: 'UploadedAt', formatter: '.formatter.formatDate' }"/>
+                                        </upload:attributes>
+                                    </upload:UploadSetItem>
+                                </upload:items>
+                            </upload:UploadSet>
                         </uxap:blocks>
                     </uxap:ObjectPageSubSection>
                 </uxap:subSections>

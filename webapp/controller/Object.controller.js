@@ -395,6 +395,131 @@ sap.ui.define([
         },
 
         /* =========================================================== */
+        /* attachments                                                 */
+        /* =========================================================== */
+
+        /**
+         * Handles a file picked in the UploadSet. The service stores attachment metadata only
+         * (there is no binary upload endpoint), so the selected file is turned into an Attachment
+         * entity linked to the current invoice via its InvoiceId. As with the line items, OData V2
+         * navigation list bindings do not surface a transient create context, so the entity is
+         * persisted right away and the list binding refreshed – the new row then appears without a
+         * page reload. The transient UploadSet item is dropped so it is not shown twice.
+         */
+        onAttachmentAdded(oEvent) {
+            const oItem = oEvent.getParameter("item");
+            const oInvoiceContext = this.getView().getBindingContext();
+            if (!oItem || !oInvoiceContext) {
+                return;
+            }
+
+            const oModel = this.getModel();
+            const oUploadSet = this.byId("attachmentsUploadSet");
+            const oFile = oItem.getFileObject();
+            const sFileName = oItem.getFileName();
+
+            oModel.createEntry("/Attachments", {
+                properties: {
+                    AttachmentId: "ATT" + Date.now(),
+                    InvoiceId: this.getModel("view").getProperty("/invoiceId"),
+                    FileName: sFileName,
+                    FileType: this._getFileExtension(sFileName),
+                    FileSize: oFile ? oFile.size : 0,
+                    MimeType: (oFile && oFile.type) || "application/octet-stream",
+                    UploadedBy: oInvoiceContext.getObject().CreatedBy || "",
+                    UploadedAt: new Date()
+                }
+            });
+
+            // The persisted attachment reappears through the refreshed list binding.
+            oUploadSet.removeIncompleteItem(oItem);
+
+            const oView = this.getView();
+            const oBundle = this.getResourceBundle();
+            oView.setBusy(true);
+
+            // Non-batch mode does not invoke the submitChanges callbacks, so the model-level
+            // request events are used to react to the create result (see onSave for details).
+            const oReq = {};
+            const fnCleanup = () => {
+                oModel.detachRequestCompleted(oReq.completed);
+                oModel.detachRequestFailed(oReq.failed);
+                oView.setBusy(false);
+            };
+            oReq.completed = (oEvt) => {
+                fnCleanup();
+                if (oEvt.getParameter("success")) {
+                    oUploadSet.getBinding("items").refresh();
+                    MessageToast.show(oBundle.getText("messageAttachmentUploadSuccess"));
+                } else {
+                    MessageBox.error(oBundle.getText("messageAttachmentUploadError"));
+                }
+            };
+            oReq.failed = () => {
+                fnCleanup();
+                MessageBox.error(oBundle.getText("messageAttachmentUploadError"));
+            };
+
+            oModel.attachRequestCompleted(oReq.completed);
+            oModel.attachRequestFailed(oReq.failed);
+            oModel.submitChanges();
+        },
+
+        /**
+         * Removes an attachment (available in edit mode). The entity is deleted and the change
+         * submitted right away; the UploadSet list binding is then refreshed so the row disappears
+         * without a page reload, mirroring the line item deletion.
+         */
+        onAttachmentRemove(oEvent) {
+            // Suppress the UploadSet's built-in remove so the entity removal drives the UI.
+            oEvent.preventDefault();
+
+            const oItem = oEvent.getParameter("item");
+            const oContext = oItem && oItem.getBindingContext();
+            if (!oContext) {
+                return;
+            }
+
+            const oModel = this.getModel();
+            const oUploadSet = this.byId("attachmentsUploadSet");
+            const oView = this.getView();
+            const oBundle = this.getResourceBundle();
+            oView.setBusy(true);
+
+            const oReq = {};
+            const fnCleanup = () => {
+                oModel.detachRequestCompleted(oReq.completed);
+                oModel.detachRequestFailed(oReq.failed);
+                oView.setBusy(false);
+            };
+            oReq.completed = (oEvt) => {
+                fnCleanup();
+                if (oEvt.getParameter("success")) {
+                    oUploadSet.getBinding("items").refresh();
+                } else {
+                    MessageBox.error(oBundle.getText("messageAttachmentDeleteError"));
+                }
+            };
+            oReq.failed = () => {
+                fnCleanup();
+                MessageBox.error(oBundle.getText("messageAttachmentDeleteError"));
+            };
+
+            oModel.attachRequestCompleted(oReq.completed);
+            oModel.attachRequestFailed(oReq.failed);
+            oModel.remove(oContext.getPath());
+        },
+
+        /** Returns the upper-cased file extension of a file name, e.g. "scan.PDF" -> "PDF". */
+        _getFileExtension(sFileName) {
+            if (!sFileName) {
+                return "";
+            }
+            const iDot = sFileName.lastIndexOf(".");
+            return iDot >= 0 ? sFileName.slice(iDot + 1).toUpperCase() : "";
+        },
+
+        /* =========================================================== */
         /* internal helpers                                            */
         /* =========================================================== */
 
