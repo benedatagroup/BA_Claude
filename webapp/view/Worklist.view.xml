@@ -165,6 +165,13 @@
                     <OverflowToolbar id="tableToolbar">
                         <Title id="tableHeaderTitle" text="{view>/tableTitle}" level="H3"/>
                         <ToolbarSpacer id="tableToolbarSpacer"/>
+                        <Button
+                            id="createButton"
+                            text="{i18n>actionCreate}"
+                            icon="sap-icon://add"
+                            type="Emphasized"
+                            press=".onCreatePress"/>
+                        <ToolbarSeparator id="tableToolbarCreateSeparator"/>
                         <SearchField
                             id="searchField"
                             width="20rem"

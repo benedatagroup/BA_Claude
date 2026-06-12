@@ -1,0 +1,83 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    xmlns:f="sap.ui.layout.form">
+
+    <Dialog
+        id="createInvoiceDialog"
+        title="{i18n>createDialogTitle}"
+        contentWidth="32rem"
+        draggable="true"
+        afterClose=".onCreateDialogAfterClose">
+
+        <content>
+            <f:SimpleForm
+                id="createInvoiceForm"
+                layout="ResponsiveGridLayout"
+                editable="true"
+                singleContainerFullSize="false"
+                labelSpanXL="4" labelSpanL="4" labelSpanM="4" labelSpanS="12"
+                columnsXL="1" columnsL="1" columnsM="1"
+                class="sapUiNoMarginTop">
+
+                <f:content>
+                    <Label id="createInvoiceNumberLabel" text="{i18n>createFieldInvoiceNumber}" required="true" labelFor="createInvoiceNumberInput"/>
+                    <Input
+                        id="createInvoiceNumberInput"
+                        maxLength="20"
+                        placeholder="{i18n>createInvoiceNumberPlaceholder}"
+                        value=""/>
+
+                    <Label id="createVendorLabel" text="{i18n>createFieldVendor}" required="true" labelFor="createVendorInput"/>
+                    <Input
+                        id="createVendorInput"
+                        maxLength="80"
+                        placeholder="{i18n>filterVendorPlaceholder}"
+                        value=""/>
+
+                    <Label id="createInvoiceDateLabel" text="{i18n>createFieldInvoiceDate}" required="true" labelFor="createInvoiceDatePicker"/>
+                    <DatePicker
+                        id="createInvoiceDatePicker"
+                        displayFormat="medium"
+                        placeholder="{i18n>createDatePlaceholder}"
+                        value=""/>
+
+                    <Label id="createCurrencyLabel" text="{i18n>createFieldCurrency}" required="true" labelFor="createCurrencySelect"/>
+                    <Select
+                        id="createCurrencySelect"
+                        selectedKey=""
+                        forceSelection="false"
+                        width="100%">
+                        <core:Item id="createCurrencyItemNone" key="" text="{i18n>createCurrencyPlaceholder}"/>
+                        <core:Item id="createCurrencyItemEUR" key="EUR" text="EUR"/>
+                        <core:Item id="createCurrencyItemUSD" key="USD" text="USD"/>
+                    </Select>
+
+                    <Label id="createDueDateLabel" text="{i18n>createFieldDueDate}" labelFor="createDueDatePicker"/>
+                    <DatePicker
+                        id="createDueDatePicker"
+                        displayFormat="medium"
+                        placeholder="{i18n>createDatePlaceholder}"
+                        value=""/>
+                </f:content>
+            </f:SimpleForm>
+        </content>
+
+        <beginButton>
+            <Button
+                id="createConfirmButton"
+                text="{i18n>actionCreateConfirm}"
+                type="Emphasized"
+                press=".onCreateConfirm"/>
+        </beginButton>
+        <endButton>
+            <Button
+                id="createCancelButton"
+                text="{i18n>actionCancel}"
+                press=".onCreateCancel"/>
+        </endButton>
+
+    </Dialog>
+
+</core:FragmentDefinition>

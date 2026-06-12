@@ -5,8 +5,10 @@ sap.ui.define([
     "sap/ui/model/Filter",
     "sap/ui/model/FilterOperator",
     "sap/ui/model/Sorter",
-    "sap/m/MessageToast"
-], (BaseController, formatter, JSONModel, Filter, FilterOperator, Sorter, MessageToast) => {
+    "sap/ui/core/ValueState",
+    "sap/m/MessageToast",
+    "sap/m/MessageBox"
+], (BaseController, formatter, JSONModel, Filter, FilterOperator, Sorter, ValueState, MessageToast, MessageBox) => {
     "use strict";
 
     return BaseController.extend("baclaude.controller.Worklist", {
@@ -97,6 +99,199 @@ sap.ui.define([
             this.getRouter().navTo("object", {
                 invoiceId: encodeURIComponent(sInvoiceId)
             });
+        },
+
+        /* =========================================================== */
+        /* create invoice                                              */
+        /* =========================================================== */
+
+        /**
+         * Opens the "create invoice" dialog. The fragment is loaded lazily on first use and
+         * kept for subsequent opens; its input fields are reset to their initial state each
+         * time so a previously cancelled entry does not leak into the next one.
+         */
+        onCreatePress() {
+            const fnOpen = (oDialog) => {
+                this._resetCreateDialog();
+                oDialog.open();
+            };
+
+            if (this._pCreateDialog) {
+                this._pCreateDialog.then(fnOpen);
+                return;
+            }
+
+            // loadFragment prefixes the fragment's control ids with the view id (so this.byId
+            // resolves them) and registers the dialog as a dependent of the view automatically.
+            this._pCreateDialog = this.loadFragment({
+                name: "baclaude.view.fragment.CreateInvoice"
+            });
+            this._pCreateDialog.then(fnOpen);
+        },
+
+        /**
+         * Validates the dialog input and, when valid, creates a new invoice in status "Draft"
+         * via an OData create request. Net/tax/gross start at 0 and are later derived from the
+         * line items that are added separately on the object page. On success the table binding
+         * is refreshed so the new invoice shows up in the list right away.
+         */
+        onCreateConfirm() {
+            const oData = this._readCreateInput();
+            if (!this._validateCreate(oData)) {
+                return;
+            }
+
+            const oModel = this.getModel();
+
+            // Drop any transient entry left over from a previous failed attempt so a retry does
+            // not submit a duplicate invoice. The worklist itself makes no other pending changes.
+            if (oModel.hasPendingChanges()) {
+                oModel.resetChanges();
+            }
+
+            const oProperties = {
+                InvoiceId: "INV-" + Date.now(),
+                InvoiceNumber: oData.invoiceNumber,
+                VendorName: oData.vendorName,
+                InvoiceDate: oData.invoiceDate,
+                NetAmount: "0.00",
+                TaxAmount: "0.00",
+                GrossAmount: "0.00",
+                Currency: oData.currency,
+                Status: "Draft"
+            };
+            if (oData.dueDate) {
+                oProperties.DueDate = oData.dueDate;
+            }
+
+            oModel.createEntry("/Invoices", { properties: oProperties });
+
+            const oView = this.getView();
+            const oBundle = this.getResourceBundle();
+            const that = this;
+            oView.setBusy(true);
+
+            // The service runs in non-batch mode (manifest: useBatch=false). In that mode the
+            // success/error callbacks of submitChanges are not invoked, so the model-level
+            // request events are used to react to the create result (mirrors the Object controller).
+            const oReq = {};
+            const fnCleanup = () => {
+                oModel.detachRequestCompleted(oReq.completed);
+                oModel.detachRequestFailed(oReq.failed);
+                oView.setBusy(false);
+            };
+            oReq.completed = (oEvent) => {
+                fnCleanup();
+                if (oEvent.getParameter("success")) {
+                    that._closeCreateDialog();
+                    that.byId("invoicesTable").getBinding("items").refresh();
+                    MessageToast.show(oBundle.getText("messageCreateSuccess"));
+                } else {
+                    MessageBox.error(oBundle.getText("messageCreateError"));
+                }
+            };
+            oReq.failed = () => {
+                fnCleanup();
+                MessageBox.error(oBundle.getText("messageCreateError"));
+            };
+
+            oModel.attachRequestCompleted(oReq.completed);
+            oModel.attachRequestFailed(oReq.failed);
+            oModel.submitChanges();
+        },
+
+        /** Discards the pending entry and closes the dialog. */
+        onCreateCancel() {
+            const oModel = this.getModel();
+            if (oModel.hasPendingChanges()) {
+                oModel.resetChanges();
+            }
+            this._closeCreateDialog();
+        },
+
+        /** Clears inline validation feedback once the dialog has fully closed. */
+        onCreateDialogAfterClose() {
+            this._resetCreateDialog();
+        },
+
+        /** Reads the current dialog input into a plain object. */
+        _readCreateInput() {
+            return {
+                invoiceNumber: this.byId("createInvoiceNumberInput").getValue().trim(),
+                vendorName: this.byId("createVendorInput").getValue().trim(),
+                invoiceDate: this.byId("createInvoiceDatePicker").getDateValue(),
+                currency: this.byId("createCurrencySelect").getSelectedKey(),
+                dueDate: this.byId("createDueDatePicker").getDateValue()
+            };
+        },
+
+        /**
+         * Validates the mandatory create fields (invoice number, vendor, invoice date, currency).
+         * Shows inline value states on the offending controls and an aggregated error dialog.
+         * Returns true when all mandatory values are present.
+         */
+        _validateCreate(oData) {
+            const oBundle = this.getResourceBundle();
+            const aMessages = [];
+
+            const oInvoiceNumber = this.byId("createInvoiceNumberInput");
+            const oVendor = this.byId("createVendorInput");
+            const oInvoiceDate = this.byId("createInvoiceDatePicker");
+            const oCurrency = this.byId("createCurrencySelect");
+
+            [oInvoiceNumber, oVendor, oInvoiceDate, oCurrency].forEach((oControl) => oControl.setValueState(ValueState.None));
+
+            if (!oData.invoiceNumber) {
+                const sMsg = oBundle.getText("validationInvoiceNumberRequired");
+                oInvoiceNumber.setValueState(ValueState.Error);
+                oInvoiceNumber.setValueStateText(sMsg);
+                aMessages.push(sMsg);
+            }
+
+            if (!oData.vendorName) {
+                const sMsg = oBundle.getText("validationVendorRequired");
+                oVendor.setValueState(ValueState.Error);
+                oVendor.setValueStateText(sMsg);
+                aMessages.push(sMsg);
+            }
+
+            if (!oData.invoiceDate) {
+                const sMsg = oBundle.getText("validationInvoiceDateRequired");
+                oInvoiceDate.setValueState(ValueState.Error);
+                oInvoiceDate.setValueStateText(sMsg);
+                aMessages.push(sMsg);
+            }
+
+            if (!oData.currency) {
+                const sMsg = oBundle.getText("validationCurrencyRequired");
+                oCurrency.setValueState(ValueState.Error);
+                oCurrency.setValueStateText(sMsg);
+                aMessages.push(sMsg);
+            }
+
+            if (aMessages.length) {
+                MessageBox.error(aMessages.join("\n"), {
+                    title: oBundle.getText("validationErrorTitle")
+                });
+                return false;
+            }
+            return true;
+        },
+
+        /** Resets all dialog fields and their value states to the initial empty state. */
+        _resetCreateDialog() {
+            this.byId("createInvoiceNumberInput").setValue("").setValueState(ValueState.None);
+            this.byId("createVendorInput").setValue("").setValueState(ValueState.None);
+            this.byId("createInvoiceDatePicker").setValue("").setValueState(ValueState.None);
+            this.byId("createCurrencySelect").setSelectedKey("").setValueState(ValueState.None);
+            this.byId("createDueDatePicker").setValue("");
+        },
+
+        /** Closes the create dialog if it is open. */
+        _closeCreateDialog() {
+            if (this._pCreateDialog) {
+                this._pCreateDialog.then((oDialog) => oDialog.close());
+            }
         },
 
         /* =========================================================== */
