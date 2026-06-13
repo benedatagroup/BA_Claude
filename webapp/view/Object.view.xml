@@ -464,6 +464,12 @@
         <uxap:footer>
             <OverflowToolbar id="objectFooterToolbar">
                 <ToolbarSpacer id="objectFooterSpacer"/>
+                <Button id="objectPostButton"
+                    text="{i18n>actionPost}"
+                    icon="sap-icon://accept"
+                    type="Emphasized"
+                    press=".onPost"
+                    visible="{= ${Status} === 'Draft' }"/>
                 <Button id="objectSaveButton"
                     text="{i18n>actionSave}"
                     type="Emphasized"

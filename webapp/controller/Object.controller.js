@@ -134,6 +134,60 @@ sap.ui.define([
         },
 
         /* =========================================================== */
+        /* posting                                                     */
+        /* =========================================================== */
+
+        /**
+         * Posts the invoice: changes its status from "Draft" to "Posted" via an OData update.
+         * The button is only available in edit mode for draft invoices (see the footer in the
+         * view). The status change is written to the shared OData model, so once the request
+         * succeeds both the object page and the worklist list reflect the new status without a
+         * manual reload. Edit mode is left afterwards as a posted invoice is no longer editable.
+         */
+        onPost() {
+            const oModel = this.getModel();
+            const oContext = this.getView().getBindingContext();
+            if (!oContext) {
+                return;
+            }
+
+            oModel.setProperty("Status", "Posted", oContext);
+
+            const oView = this.getView();
+            const oBundle = this.getResourceBundle();
+            const that = this;
+            oView.setBusy(true);
+
+            // Non-batch mode does not invoke the submitChanges callbacks, so the model-level
+            // request events are used to react to the update result (see onSave for details).
+            const oReq = {};
+            const fnCleanup = () => {
+                oModel.detachRequestCompleted(oReq.completed);
+                oModel.detachRequestFailed(oReq.failed);
+                oView.setBusy(false);
+            };
+            oReq.completed = (oEvent) => {
+                fnCleanup();
+                if (oEvent.getParameter("success")) {
+                    that._leaveEditMode();
+                    MessageToast.show(oBundle.getText("messagePostSuccess"));
+                } else {
+                    oModel.resetChanges();
+                    MessageBox.error(oBundle.getText("messagePostError"));
+                }
+            };
+            oReq.failed = () => {
+                fnCleanup();
+                oModel.resetChanges();
+                MessageBox.error(oBundle.getText("messagePostError"));
+            };
+
+            oModel.attachRequestCompleted(oReq.completed);
+            oModel.attachRequestFailed(oReq.failed);
+            oModel.submitChanges();
+        },
+
+        /* =========================================================== */
         /* line items                                                  */
         /* =========================================================== */
 
