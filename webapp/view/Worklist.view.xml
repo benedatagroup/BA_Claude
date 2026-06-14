@@ -6,6 +6,9 @@
     xmlns:l="sap.ui.layout"
     xmlns:core="sap.ui.core"
     xmlns:mvc="sap.ui.core.mvc"
+    xmlns:viz="sap.viz.ui5.controls"
+    xmlns:viz.data="sap.viz.ui5.data"
+    xmlns:viz.feeds="sap.viz.ui5.controls.common.feeds"
     height="100%">
 
     <f:DynamicPage id="page" toggleHeaderOnTitleClick="true" showFooter="false" preserveHeaderStateOnScroll="false" fitContent="true">
@@ -139,8 +142,60 @@
         <!-- Content – Invoice table                                      -->
         <!-- ============================================================ -->
         <f:content>
-            <Table
-                id="invoicesTable"
+            <VBox id="contentBox" fitContainer="true">
+
+                <!-- ==================================================== -->
+                <!-- Chart – invoice count per month                      -->
+                <!-- ==================================================== -->
+                <Panel
+                    id="chartPanel"
+                    headerText="{i18n>chartPanelTitle}"
+                    expandable="true"
+                    expanded="true"
+                    width="auto"
+                    class="sapUiResponsiveMargin">
+                    <viz:VizFrame
+                        id="invoiceChart"
+                        vizType="column"
+                        height="320px"
+                        width="100%"
+                        uiConfig="{applicationSet:'fiori'}">
+                        <viz:dataset>
+                            <viz.data:FlattenedDataset id="chartDataset" data="{chart>/months}">
+                                <viz.data:dimensions>
+                                    <viz.data:DimensionDefinition
+                                        id="chartDimMonth"
+                                        name="Monat"
+                                        value="{chart>month}"/>
+                                </viz.data:dimensions>
+                                <viz.data:measures>
+                                    <viz.data:MeasureDefinition
+                                        id="chartMeasureCount"
+                                        name="Rechnungen"
+                                        value="{chart>count}"/>
+                                </viz.data:measures>
+                            </viz.data:FlattenedDataset>
+                        </viz:dataset>
+                        <viz:feeds>
+                            <viz.feeds:FeedItem
+                                id="chartFeedValue"
+                                uid="valueAxis"
+                                type="Measure"
+                                values="Rechnungen"/>
+                            <viz.feeds:FeedItem
+                                id="chartFeedCategory"
+                                uid="categoryAxis"
+                                type="Dimension"
+                                values="Monat"/>
+                        </viz:feeds>
+                    </viz:VizFrame>
+                </Panel>
+
+                <!-- ==================================================== -->
+                <!-- Invoice table                                        -->
+                <!-- ==================================================== -->
+                <Table
+                    id="invoicesTable"
                 inset="false"
                 growing="true"
                 growingThreshold="20"
@@ -229,7 +284,9 @@
                     </ColumnListItem>
                 </items>
 
-            </Table>
+                </Table>
+
+            </VBox>
         </f:content>
 
     </f:DynamicPage>

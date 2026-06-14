@@ -6,9 +6,10 @@ sap.ui.define([
     "sap/ui/model/FilterOperator",
     "sap/ui/model/Sorter",
     "sap/ui/core/ValueState",
+    "sap/ui/core/format/DateFormat",
     "sap/m/MessageToast",
     "sap/m/MessageBox"
-], (BaseController, formatter, JSONModel, Filter, FilterOperator, Sorter, ValueState, MessageToast, MessageBox) => {
+], (BaseController, formatter, JSONModel, Filter, FilterOperator, Sorter, ValueState, DateFormat, MessageToast, MessageBox) => {
     "use strict";
 
     return BaseController.extend("baclaude.controller.Worklist", {
@@ -28,9 +29,38 @@ sap.ui.define([
             });
             this.setModel(oViewModel, "view");
 
+            // Separate model that feeds the "invoices per month" chart. It is filled
+            // independently of the table binding so the chart always reflects the full
+            // data set, regardless of the active list filters.
+            this.setModel(new JSONModel({ months: [] }), "chart");
+
             // delay table busy indicator only after the first data has been loaded
             this.getView().attachEventOnce("afterRendering", () => {
                 oViewModel.setProperty("/tableBusyDelay", 1000);
+            });
+
+            this._loadChartData();
+            this._initChart();
+        },
+
+        /** Applies the static visual configuration of the invoice chart. */
+        _initChart() {
+            const oBundle = this.getResourceBundle();
+            this.byId("invoiceChart").setVizProperties({
+                title: {
+                    visible: true,
+                    text: oBundle.getText("chartPanelTitle")
+                },
+                plotArea: {
+                    dataLabel: { visible: true }
+                },
+                valueAxis: {
+                    title: { visible: true, text: oBundle.getText("chartMeasureCount") }
+                },
+                categoryAxis: {
+                    title: { visible: true, text: oBundle.getText("chartDimensionMonth") }
+                },
+                legend: { visible: false }
             });
         },
 
@@ -185,6 +215,7 @@ sap.ui.define([
                 if (oEvent.getParameter("success")) {
                     that._closeCreateDialog();
                     that.byId("invoicesTable").getBinding("items").refresh();
+                    that._loadChartData();
                     MessageToast.show(oBundle.getText("messageCreateSuccess"));
                 } else {
                     MessageBox.error(oBundle.getText("messageCreateError"));
@@ -292,6 +323,56 @@ sap.ui.define([
             if (this._pCreateDialog) {
                 this._pCreateDialog.then((oDialog) => oDialog.close());
             }
+        },
+
+        /* =========================================================== */
+        /* chart                                                       */
+        /* =========================================================== */
+
+        /**
+         * Reads the full set of invoices (only the fields needed for the chart) and feeds
+         * the aggregated result into the "chart" model. Called on init and again after a new
+         * invoice has been created, so the chart stays in sync without a manual reload.
+         */
+        _loadChartData() {
+            const oModel = this.getModel();
+            oModel.metadataLoaded().then(() => {
+                oModel.read("/Invoices", {
+                    urlParameters: { "$select": "InvoiceId,InvoiceDate" },
+                    success: (oData) => {
+                        this._aggregateChartData(oData.results || []);
+                    }
+                });
+            });
+        },
+
+        /**
+         * Groups the given invoices by calendar month and counts them, producing a
+         * chronologically sorted array of { key, month, count } entries for the chart model.
+         */
+        _aggregateChartData(aInvoices) {
+            const oMonthFormat = DateFormat.getDateInstance({ pattern: "MMM yyyy" });
+            const mGroups = {};
+
+            aInvoices.forEach((oInvoice) => {
+                const oDate = oInvoice.InvoiceDate;
+                if (!oDate) {
+                    return;
+                }
+                // OData V2 delivers Edm.DateTime as a JS Date; guard for string just in case.
+                const oJsDate = oDate instanceof Date ? oDate : new Date(oDate);
+                const sKey = oJsDate.getFullYear() + "-" + String(oJsDate.getMonth() + 1).padStart(2, "0");
+                if (!mGroups[sKey]) {
+                    mGroups[sKey] = { key: sKey, month: oMonthFormat.format(oJsDate), count: 0 };
+                }
+                mGroups[sKey].count++;
+            });
+
+            const aMonths = Object.keys(mGroups)
+                .sort()
+                .map((sKey) => mGroups[sKey]);
+
+            this.getModel("chart").setProperty("/months", aMonths);
         },
 
         /* =========================================================== */
