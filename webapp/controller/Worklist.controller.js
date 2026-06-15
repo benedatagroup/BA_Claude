@@ -21,23 +21,14 @@ sap.ui.define([
         /* =========================================================== */
 
         onInit() {
-            const oViewModel = new JSONModel({
-                tableBusyDelay: 0,
-                tableTitle: this.getResourceBundle().getText("worklistTableTitle"),
-                itemCount: 0,
-                sortDescending: true
-            });
-            this.setModel(oViewModel, "view");
+            this.setModel(new JSONModel({
+                itemCount: 0
+            }), "view");
 
             // Separate model that feeds the "invoices per month" chart. It is filled
             // independently of the table binding so the chart always reflects the full
             // data set, regardless of the active list filters.
             this.setModel(new JSONModel({ months: [] }), "chart");
-
-            // delay table busy indicator only after the first data has been loaded
-            this.getView().attachEventOnce("afterRendering", () => {
-                oViewModel.setProperty("/tableBusyDelay", 1000);
-            });
 
             this._loadChartData();
             this._initChart();
@@ -68,64 +59,97 @@ sap.ui.define([
         /* event handlers                                              */
         /* =========================================================== */
 
-        /** Updates the toolbar title with the current row count after the table has loaded. */
+        /**
+         * Triggers the initial table binding once the SmartFilterBar has finished
+         * initializing. Binding the table only from here (and from the filter bar's search
+         * event) – rather than auto-connecting via the table's "smartFilterId" – avoids the
+         * "getFilters called before the SmartFilterBar is initialized" warning, because the
+         * filter bar is guaranteed to be ready before getFilters() is ever called.
+         */
+        onFilterBarInitialized() {
+            this.byId("invoiceSmartTable").rebindTable();
+        },
+
+        /** Re-binds the table when the user runs a search on the SmartFilterBar. */
+        onFilterBarSearch() {
+            this.byId("invoiceSmartTable").rebindTable();
+        },
+
+        /**
+         * Called once when the SmartTable has created its inner (responsive) table.
+         * The columns and the filter fields are generated automatically from the OData
+         * metadata; here we only enable row navigation on the generated table:
+         * "SingleSelectMaster" makes the whole row clickable, and the selection change
+         * navigates to the object page.
+         */
+        onSmartTableInitialise(oEvent) {
+            const oInnerTable = oEvent.getSource().getTable();
+            oInnerTable.setMode("SingleSelectMaster");
+            oInnerTable.attachSelectionChange(this.onItemSelect, this);
+            oInnerTable.attachUpdateFinished(this.onUpdateFinished, this);
+        },
+
+        /**
+         * Prepares the table binding on every rebind: it merges the SmartFilterBar's current
+         * filter values and basic search term into the OData request (so a search produces a
+         * filtered request), keeps the inline count for the page header, and applies a default
+         * sort order (newest invoices first) when the user has not sorted otherwise.
+         */
+        onBeforeRebindTable(oEvent) {
+            const oBindingParams = oEvent.getParameter("bindingParams");
+            oBindingParams.parameters = oBindingParams.parameters || {};
+            oBindingParams.parameters.countMode = "Inline";
+
+            const oFilterBar = this.byId("invoiceFilterBar");
+            if (oFilterBar.isInitialised()) {
+                oBindingParams.filters = oBindingParams.filters || [];
+
+                // Field filters maintained in the SmartFilterBar (translated to $filter).
+                oBindingParams.filters = oBindingParams.filters.concat(oFilterBar.getFilters());
+
+                // Basic (free-text) search. The MockServer only understands $filter, not the
+                // gateway "search" url parameter, so the search term is turned into a
+                // "contains" filter across the main text fields instead.
+                const sSearch = (oFilterBar.getBasicSearchValue() || "").trim();
+                if (sSearch) {
+                    oBindingParams.filters.push(new Filter({
+                        filters: [
+                            new Filter("InvoiceNumber", FilterOperator.Contains, sSearch),
+                            new Filter("VendorName", FilterOperator.Contains, sSearch),
+                            new Filter("ReferenceNumber", FilterOperator.Contains, sSearch)
+                        ],
+                        and: false
+                    }));
+                }
+            }
+
+            oBindingParams.sorter = oBindingParams.sorter || [];
+            if (!oBindingParams.sorter.length) {
+                oBindingParams.sorter.push(new Sorter("InvoiceDate", true));
+            }
+        },
+
+        /** Updates the result count shown in the snapped page header after each load. */
         onUpdateFinished(oEvent) {
             const iTotal = oEvent.getParameter("total");
-            const oViewModel = this.getModel("view");
-            const oResourceBundle = this.getResourceBundle();
-            const sTitle = iTotal && iTotal > 0
-                ? oResourceBundle.getText("worklistTableTitleCount", [iTotal])
-                : oResourceBundle.getText("worklistTableTitle");
-            oViewModel.setProperty("/tableTitle", sTitle);
-            oViewModel.setProperty("/itemCount", iTotal || 0);
-        },
-
-        /** Triggered by the SearchField – re-applies the combined filter set. */
-        onSearch() {
-            this._applyFilters();
-        },
-
-        /** Generic handler for any change in a filter input or the segmented button. */
-        onFilterChange() {
-            this._applyFilters();
-        },
-
-        /** Resets all filters to their initial state. */
-        onClearFilters() {
-            this.byId("statusFilter").setSelectedKey("all");
-            this.byId("vendorFilter").setValue("");
-            this.byId("dateFilter").setValue("");
-            this.byId("currencyFilter").setSelectedKey("");
-            this.byId("amountFrom").setValue("");
-            this.byId("amountTo").setValue("");
-            this.byId("searchField").setValue("");
-            this._applyFilters();
-            MessageToast.show(this.getResourceBundle().getText("messageFiltersCleared"));
+            this.getModel("view").setProperty("/itemCount", iTotal || 0);
         },
 
         /** Refreshes the OData binding so the latest data is fetched. */
         onRefresh() {
-            const oBinding = this.byId("invoicesTable").getBinding("items");
-            oBinding.refresh(true);
+            this.byId("invoiceSmartTable").rebindTable();
             MessageToast.show(this.getResourceBundle().getText("messageRefreshed"));
         },
 
-        /** Toggles the sort order of the InvoiceDate column. */
-        onSort() {
-            const oViewModel = this.getModel("view");
-            const bDescending = !oViewModel.getProperty("/sortDescending");
-            oViewModel.setProperty("/sortDescending", bDescending);
-            const oBinding = this.byId("invoicesTable").getBinding("items");
-            oBinding.sort(new Sorter("InvoiceDate", bDescending));
-            MessageToast.show(this.getResourceBundle().getText(
-                bDescending ? "messageSortDesc" : "messageSortAsc"
-            ));
-        },
-
-        /** Navigates to the object page when a row is pressed. */
-        onItemPress(oEvent) {
-            const oContext = oEvent.getSource().getBindingContext();
-            const sInvoiceId = oContext.getProperty("InvoiceId");
+        /** Navigates to the object page when a row is selected. */
+        onItemSelect(oEvent) {
+            const oItem = oEvent.getParameter("listItem");
+            if (!oItem) {
+                return;
+            }
+            const sInvoiceId = oItem.getBindingContext().getProperty("InvoiceId");
+            // Clear the selection so the row is not highlighted on return.
+            oEvent.getSource().removeSelections(true);
             this.getRouter().navTo("object", {
                 invoiceId: encodeURIComponent(sInvoiceId)
             });
@@ -182,17 +206,21 @@ sap.ui.define([
             const oProperties = {
                 InvoiceId: "INV-" + Date.now(),
                 InvoiceNumber: oData.invoiceNumber,
+                VendorId: "",
                 VendorName: oData.vendorName,
                 InvoiceDate: oData.invoiceDate,
+                DueDate: oData.dueDate || null,
+                PostingDate: null,
                 NetAmount: "0.00",
                 TaxAmount: "0.00",
                 GrossAmount: "0.00",
                 Currency: oData.currency,
-                Status: "Draft"
+                Status: "Draft",
+                PaymentTerms: "",
+                ReferenceNumber: "",
+                CompanyCode: "",
+                CreatedBy: ""
             };
-            if (oData.dueDate) {
-                oProperties.DueDate = oData.dueDate;
-            }
 
             oModel.createEntry("/Invoices", { properties: oProperties });
 
@@ -214,7 +242,7 @@ sap.ui.define([
                 fnCleanup();
                 if (oEvent.getParameter("success")) {
                     that._closeCreateDialog();
-                    that.byId("invoicesTable").getBinding("items").refresh();
+                    that.byId("invoiceSmartTable").rebindTable();
                     that._loadChartData();
                     MessageToast.show(oBundle.getText("messageCreateSuccess"));
                 } else {
@@ -373,81 +401,6 @@ sap.ui.define([
                 .map((sKey) => mGroups[sKey]);
 
             this.getModel("chart").setProperty("/months", aMonths);
-        },
-
-        /* =========================================================== */
-        /* internal methods                                            */
-        /* =========================================================== */
-
-        /**
-         * Builds a combined OData filter from all filter inputs and applies it
-         * to the table's "items" aggregation binding.
-         */
-        _applyFilters() {
-            const aFilters = [];
-
-            // Status filter (segmented button)
-            const sStatus = this.byId("statusFilter").getSelectedKey();
-            if (sStatus && sStatus !== "all") {
-                aFilters.push(new Filter("Status", FilterOperator.EQ, sStatus));
-            }
-
-            // Vendor name (contains)
-            const sVendor = this.byId("vendorFilter").getValue().trim();
-            if (sVendor) {
-                aFilters.push(new Filter("VendorName", FilterOperator.Contains, sVendor));
-            }
-
-            // Invoice date range
-            const oDateRange = this.byId("dateFilter");
-            const oDateFrom = oDateRange.getDateValue();
-            const oDateTo = oDateRange.getSecondDateValue();
-            if (oDateFrom && oDateTo) {
-                aFilters.push(new Filter("InvoiceDate", FilterOperator.BT, oDateFrom, oDateTo));
-            } else if (oDateFrom) {
-                aFilters.push(new Filter("InvoiceDate", FilterOperator.GE, oDateFrom));
-            }
-
-            // Currency
-            const sCurrency = this.byId("currencyFilter").getSelectedKey();
-            if (sCurrency) {
-                aFilters.push(new Filter("Currency", FilterOperator.EQ, sCurrency));
-            }
-
-            // Gross amount range
-            const sAmountFrom = this.byId("amountFrom").getValue();
-            const sAmountTo = this.byId("amountTo").getValue();
-            const fAmountFrom = parseFloat(sAmountFrom);
-            const fAmountTo = parseFloat(sAmountTo);
-            const bHasFrom = !isNaN(fAmountFrom);
-            const bHasTo = !isNaN(fAmountTo);
-            if (bHasFrom && bHasTo) {
-                aFilters.push(new Filter("GrossAmount", FilterOperator.BT, fAmountFrom, fAmountTo));
-            } else if (bHasFrom) {
-                aFilters.push(new Filter("GrossAmount", FilterOperator.GE, fAmountFrom));
-            } else if (bHasTo) {
-                aFilters.push(new Filter("GrossAmount", FilterOperator.LE, fAmountTo));
-            }
-
-            // Free text search across InvoiceNumber, VendorName, ReferenceNumber
-            const sSearch = this.byId("searchField").getValue().trim();
-            if (sSearch) {
-                aFilters.push(new Filter({
-                    filters: [
-                        new Filter("InvoiceNumber", FilterOperator.Contains, sSearch),
-                        new Filter("VendorName", FilterOperator.Contains, sSearch),
-                        new Filter("ReferenceNumber", FilterOperator.Contains, sSearch)
-                    ],
-                    and: false
-                }));
-            }
-
-            const oTable = this.byId("invoicesTable");
-            const oBinding = oTable.getBinding("items");
-            const oCombined = aFilters.length
-                ? new Filter({ filters: aFilters, and: true })
-                : [];
-            oBinding.filter(oCombined);
         }
     });
 });
