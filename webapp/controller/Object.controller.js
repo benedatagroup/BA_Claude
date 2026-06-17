@@ -2,11 +2,10 @@ sap.ui.define([
     "./BaseController",
     "../model/formatter",
     "sap/ui/model/json/JSONModel",
-    "sap/ui/core/routing/History",
     "sap/ui/core/library",
     "sap/m/MessageToast",
     "sap/m/MessageBox"
-], (BaseController, formatter, JSONModel, History, coreLibrary, MessageToast, MessageBox) => {
+], (BaseController, formatter, JSONModel, coreLibrary, MessageToast, MessageBox) => {
     "use strict";
 
     const ValueState = coreLibrary.ValueState;
@@ -643,14 +642,13 @@ sap.ui.define([
             return true;
         },
 
+        /**
+         * Closes the object page in the mid column and returns to the single-column
+         * worklist view. Navigating to the "worklist" route switches the
+         * FlexibleColumnLayout back to OneColumn (see manifest route layouts).
+         */
         onNavBack() {
-            const oHistory = History.getInstance();
-            const sPreviousHash = oHistory.getPreviousHash();
-            if (sPreviousHash !== undefined) {
-                window.history.go(-1);
-            } else {
-                this.getRouter().navTo("worklist", {}, true);
-            }
+            this.getRouter().navTo("worklist");
         }
     });
 });

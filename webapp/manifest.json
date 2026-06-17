@@ -93,9 +93,8 @@
     },
     "routing": {
       "config": {
-        "routerClass": "sap.m.routing.Router",
-        "controlAggregation": "pages",
-        "controlId": "app",
+        "routerClass": "sap.f.routing.Router",
+        "controlId": "fcl",
         "transition": "slide",
         "type": "View",
         "viewType": "XML",
@@ -107,29 +106,31 @@
         {
           "name": "worklist",
           "pattern": ":?query:",
-          "target": ["worklist"]
+          "target": ["worklist"],
+          "layout": "OneColumn"
         },
         {
           "name": "object",
           "pattern": "Invoices/{invoiceId}:?query:",
-          "target": ["object"]
+          "target": ["worklist", "object"],
+          "layout": "TwoColumnsMidExpanded"
         }
       ],
       "targets": {
         "worklist": {
           "id": "worklist",
           "name": "Worklist",
-          "viewLevel": 1
+          "controlAggregation": "beginColumnPages"
         },
         "object": {
           "id": "object",
           "name": "Object",
-          "viewLevel": 2
+          "controlAggregation": "midColumnPages"
         },
         "notFound": {
           "id": "notFound",
           "name": "NotFound",
-          "viewLevel": 3
+          "controlAggregation": "beginColumnPages"
         }
       }
     },

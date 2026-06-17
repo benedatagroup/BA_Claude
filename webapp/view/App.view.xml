@@ -1,7 +1,11 @@
 <mvc:View controllerName="baclaude.controller.App"
     displayBlock="true"
+    height="100%"
     xmlns:mvc="sap.ui.core.mvc"
-    xmlns="sap.m">
-    <App id="app">
-    </App>
+    xmlns:f="sap.f">
+    <!-- The FlexibleColumnLayout is the root container of the app. The router
+         (sap.f.routing.Router) places the worklist into the begin column and the
+         object page into the mid column and sets the column layout automatically
+         from the "layout" property of the matched route. -->
+    <f:FlexibleColumnLayout id="fcl" backgroundDesign="Solid"/>
 </mvc:View>
